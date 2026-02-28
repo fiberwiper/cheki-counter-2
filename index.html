@@ -1588,7 +1588,7 @@ function updateMonthMember(recordId, memberId, newVal){
       <label>グループ（タグ）</label>
       <div class="tag-checks" id="edit-tag-checks"></div>
       <div class="inline-add">
-        <input type="text" id="in-edit-new-tag" placeholder="新しいグループ名（Enterで追加）" maxlength="20">
+        <input type="text" id="in-edit-new-tag" placeholder="新しいグループ名（Enterで追加）" maxlength="20" onkeydown="if(event.key==='Enter'){event.preventDefault();addEditTag()}">
         <div class="inline-add-hint">Enterで追加します</div>
       </div>
     </div>
