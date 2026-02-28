@@ -1,0 +1,1637 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>チェキカウンター</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Kaisei+Decol:wght@400;700&family=Noto+Sans+JP:wght@400;700;900&family=DotGothic16&display=swap');
+
+:root {
+  --bg: #fff5f8;
+  --s1: #ffffff;
+  --s2: #ffeef4;
+  --s3: #ffd6e7;
+  --s4: #ffbed8;
+  --pink: #ff3d7f;
+  --pink-soft: rgba(255,61,127,0.12);
+  --peach: #ff85a8;
+  --gold: #ff9500;
+  --mint: #00c9a7;
+  --sky: #3b8bff;
+  --coral: #ff6b6b;
+  --yellow: #ffd93d;
+  --text: #1a0a1a;
+  --sub: #5a3a5a;
+  --muted: #7a5a70;
+  --border: #ffd0e4;
+  --r: 18px;
+  --r-sm: 12px;
+}
+*{box-sizing:border-box !important;margin:0;padding:0;-webkit-tap-highlight-color:transparent;max-width:100%;}
+img,input,textarea,select,button{max-width:100%;}
+html,body{overflow-x:hidden}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'Noto Sans JP',sans-serif;
+  background-image: radial-gradient(circle at 20% 0%, #ffe0ee 0%, transparent 50%), radial-gradient(circle at 80% 100%, #e8f0ff 0%, transparent 50%);
+  min-height:100vh;max-width:520px;margin:0 auto;
+  width:100%;position:relative;
+}
+
+.screen{display:none;flex-direction:column;min-height:100vh}
+.screen.active{display:flex}
+
+/* LOADING */
+#loading-screen{
+  position:fixed;inset:0;background:var(--bg);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:16px;z-index:200;
+}
+#loading-screen.hidden{display:none}
+.loader{
+  width:40px;height:40px;border-radius:50%;
+  border:3px solid var(--border);border-top-color:var(--pink);
+  animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-txt{font-size:13px;color:var(--muted)}
+
+/* HEADER */
+.hdr{
+  position:sticky;top:0;z-index:30;
+  background:rgba(255,245,248,.95);
+  backdrop-filter:blur(12px);
+  border-bottom:1.5px solid var(--border);
+  padding:13px 12px;
+  display:flex;align-items:center;gap:8px;
+  width:100%;box-sizing:border-box;overflow:hidden;
+}
+.hdr-back{
+  width:36px;height:36px;border-radius:var(--r-sm);
+  background:var(--s2);border:none;color:var(--sub);
+  font-size:20px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.hdr-back:active{opacity:.5}
+.hdr-body{flex:1;min-width:0}
+.hdr-title{font-size:17px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:'Kaisei Decol',serif;color:var(--pink)}
+.hdr-sub{font-size:10px;color:var(--muted);font-family:'DotGothic16',monospace;margin-top:1px;letter-spacing:1px}
+.hdr-actions{display:flex;gap:8px;flex-shrink:0}
+.icon-btn{
+  width:34px;height:34px;border-radius:50%;
+  background:var(--s1);border:1.5px solid var(--border);
+  color:var(--muted);font-size:15px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 6px rgba(255,61,127,.08);
+}
+.icon-btn:active{opacity:.6}
+.icon-btn.active{background:var(--pink);border-color:var(--pink);color:#fff;box-shadow:0 2px 10px rgba(255,61,127,.3)}
+.primary-btn{
+  background:var(--pink);border:none;color:#fff;
+  padding:8px 16px;border-radius:20px;
+  font-size:13px;font-weight:700;cursor:pointer;
+  font-family:'Noto Sans JP',sans-serif;white-space:nowrap;
+  box-shadow:0 3px 10px rgba(255,61,127,.3);
+}
+.primary-btn:active{opacity:.7}
+
+/* SCROLL */
+.scroll{flex:1;overflow-y:auto;padding:12px 12px 110px;overflow-x:hidden;width:100%;box-sizing:border-box}
+
+/* SAVING INDICATOR */
+#save-indicator{
+  position:fixed;top:60px;right:16px;
+  background:var(--s3);border:1px solid var(--border);
+  color:var(--sub);font-size:11px;padding:5px 10px;
+  border-radius:20px;z-index:40;
+  opacity:0;transition:opacity .3s;pointer-events:none;
+}
+#save-indicator.show{opacity:1}
+
+/* SUMMARY */
+.summary{
+  display:flex;gap:12px;align-items:center;
+  margin-bottom:14px;
+  padding:10px 16px;
+  background:var(--pink);border-radius:20px;
+  box-shadow:0 4px 16px rgba(255,61,127,.25);
+}
+.sum-card{
+  display:flex;align-items:center;gap:6px;
+  background:none;border:none;padding:0;text-align:left;
+}
+.sum-card+.sum-card{
+  padding-left:12px;border-left:1.5px solid rgba(255,255,255,.35);
+}
+.sum-val{font-family:'DotGothic16',monospace;font-size:20px;font-weight:400;line-height:1;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.15)}
+.sum-lbl{font-size:10px;color:rgba(255,255,255,.9);font-weight:700}
+
+/* TAG FILTER */
+.tag-row{
+  display:flex;gap:7px;overflow-x:auto;padding-bottom:2px;margin-bottom:14px;
+  scrollbar-width:none;
+}
+.tag-row::-webkit-scrollbar{display:none}
+.tag-pill{
+  flex-shrink:0;padding:6px 16px;border-radius:20px;
+  border:1.5px solid var(--border);background:var(--s1);
+  color:var(--sub);font-size:12px;font-weight:700;cursor:pointer;
+  white-space:nowrap;transition:all .15s;
+  box-shadow:0 2px 6px rgba(255,61,127,.06);
+}
+.tag-pill.active{background:var(--pink);border-color:var(--pink);color:#fff;box-shadow:0 3px 10px rgba(255,61,127,.3)}
+
+/* TILE */
+.tile-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;width:100%}
+.tile-card{
+  background:var(--s1);border:1.5px solid var(--border);
+  border-radius:16px;padding:10px 6px 8px;
+  cursor:pointer;transition:all .15s;
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:space-between;
+  position:relative;overflow:hidden;text-align:center;
+  min-width:0;box-shadow:0 2px 10px rgba(255,61,127,.07);
+  min-height:130px;
+}
+.tile-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--pink),var(--yellow),var(--coral));
+  opacity:0;transition:opacity .2s;
+}
+.tile-card:hover::before,.tile-card:active::before{opacity:1}
+.tile-card:active{transform:scale(.95)}
+.tile-card:hover{border-color:var(--pink);box-shadow:0 4px 16px rgba(255,61,127,.2)}
+/* tile-avatar removed */
+.tile-name{font-size:10px;font-weight:900;line-height:1.3;word-break:break-all;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);font-weight:900}
+.tile-tags{display:flex;flex-wrap:wrap;gap:3px;justify-content:center;min-height:20px;align-content:flex-start}
+.tile-tag{font-size:8px;background:var(--s3);color:var(--sub);padding:1px 5px;border-radius:6px}
+.tile-count{font-family:'DotGothic16',monospace;font-size:26px;font-weight:400;color:var(--pink);line-height:1;flex-shrink:0}
+.tile-cost{font-size:10px;color:var(--muted)}
+.tile-ctr-btns{display:flex;gap:5px;justify-content:center;width:100%}
+.tile-minus,.tile-plus{
+  flex:1;height:28px;border-radius:10px;border:none;
+  font-size:16px;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+}
+.tile-minus{background:var(--s2);color:var(--muted);border:1.5px solid var(--border)}
+.tile-plus{background:var(--pink);color:#fff;box-shadow:0 2px 8px rgba(255,61,127,.35)}
+.tile-minus:active,.tile-plus:active{opacity:.6;transform:scale(.9)}
+
+/* LIST */
+.list-card{
+  background:var(--s1);border:1.5px solid var(--border);
+  border-radius:14px;padding:10px 12px;margin-bottom:6px;
+  cursor:pointer;display:flex;align-items:center;gap:10px;
+  transition:all .15s;box-shadow:0 2px 8px rgba(255,61,127,.05);
+}
+.list-card:active{opacity:.8;transform:scale(.99)}
+.list-card:hover{border-color:var(--pink);box-shadow:0 3px 12px rgba(255,61,127,.15)}
+.list-avatar{display:none}
+.list-info{flex:1;min-width:0;display:flex;align-items:center;gap:8px}
+.list-name{font-size:14px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
+.list-meta{display:none}
+.list-tags{display:flex;gap:4px;flex-wrap:nowrap;overflow:hidden}
+.list-tag{font-size:9px;background:var(--s3);color:var(--sub);padding:2px 6px;border-radius:6px;white-space:nowrap;flex-shrink:0}
+.list-right{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.list-count{font-family:'DotGothic16',monospace;font-size:20px;font-weight:400;min-width:28px;text-align:right;color:var(--pink)}
+.list-cost{font-size:10px;color:var(--muted)}
+.list-btns{display:flex;gap:5px;flex-shrink:0}
+.list-minus,.list-plus{
+  width:30px;height:30px;border-radius:10px;border:none;
+  font-size:16px;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .1s;
+}
+.list-minus{background:var(--s2);color:var(--muted);border:1.5px solid var(--border)}
+.list-plus{background:var(--pink);color:#fff;box-shadow:0 2px 8px rgba(255,61,127,.3)}
+.list-minus:active,.list-plus:active{opacity:.6;transform:scale(.88)}
+
+/* DETAIL */
+.big-ctr{
+  background:linear-gradient(135deg,#fff0f6 0%,#fff8e8 100%);
+  border:1.5px solid var(--border);
+  border-radius:24px;padding:24px 14px;
+  display:flex;flex-direction:column;align-items:center;
+  gap:14px;margin-bottom:14px;
+  width:100%;box-sizing:border-box;
+  box-shadow:0 4px 20px rgba(255,61,127,.1);
+}
+.big-num{
+  font-family:'DotGothic16',monospace;
+  font-size:80px;font-weight:400;color:var(--pink);line-height:1;
+  text-shadow:0 4px 16px rgba(255,61,127,.2);
+}
+.big-num.bump{animation:bigbump .2s ease}
+@keyframes bigbump{
+  0%{transform:scale(1);color:var(--pink)}
+  40%{transform:scale(1.18);color:var(--coral)}
+  100%{transform:scale(1);color:var(--pink)}
+}
+.ctr-btns{display:flex;align-items:center;gap:20px}
+.c-btn{
+  width:66px;height:66px;border-radius:50%;border:none;
+  font-size:32px;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .1s;
+}
+.c-btn:active{transform:scale(.85)}
+.c-minus{background:var(--s2);color:var(--muted);border:2px solid var(--border)}
+.c-plus{background:var(--pink);color:#fff;box-shadow:0 6px 20px rgba(255,61,127,.4)}
+
+.cost-grid{
+  background:linear-gradient(135deg,#fff8e8,#fff0f6);
+  border:1.5px solid var(--border);
+  border-radius:var(--r);padding:12px 14px;
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;
+  margin-bottom:14px;
+  overflow:hidden;width:100%;box-sizing:border-box;
+}
+.cost-toggle-row{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:10px;
+}
+.cf label{font-size:11px;color:var(--muted);display:block;margin-bottom:5px}
+.cf input{
+  background:none;border:none;
+  font-family:'Space Mono',monospace;font-size:20px;font-weight:700;
+  color:var(--gold);width:100%;outline:none;-webkit-appearance:none;
+}
+.cf input::placeholder{color:var(--s4)}
+.cost-total{font-family:'DotGothic16',monospace;font-size:22px;font-weight:400;color:var(--gold)}
+
+.shot-toggle-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.toggle-switch{
+  width:44px;height:24px;border-radius:12px;
+  background:#e0d0d8;border:none;cursor:pointer;
+  position:relative;transition:background .2s;
+}
+.toggle-switch.on{background:var(--pink)}
+.toggle-switch::after{
+  content:'';position:absolute;top:3px;left:3px;
+  width:18px;height:18px;border-radius:50%;background:#fff;
+  transition:transform .2s;
+}
+.toggle-switch.on::after{transform:translateX(20px)}
+
+.shot-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.shot-card{
+  background:var(--s1);border:1.5px solid var(--border);
+  border-radius:16px;padding:12px 10px;text-align:center;
+  box-shadow:0 2px 8px rgba(255,61,127,.06);
+}
+.shot-name{font-size:11px;color:var(--sub);font-weight:700;margin-bottom:8px}
+.shot-count{font-family:'DotGothic16',monospace;font-size:26px;font-weight:400;margin-bottom:8px;color:var(--pink)}
+.shot-count.bump{animation:smallbump .15s ease}
+@keyframes smallbump{
+  0%{transform:scale(1);color:var(--pink)}
+  50%{transform:scale(1.35);color:var(--coral)}
+  100%{transform:scale(1);color:var(--pink)}
+}
+.shot-btns{display:flex;justify-content:center;gap:7px}
+.s-btn{
+  width:32px;height:32px;border-radius:50%;border:none;
+  font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:transform .1s;
+}
+.s-btn:active{transform:scale(.82)}
+.s-minus{background:var(--s2);color:var(--muted);border:1.5px solid var(--border)}
+.s-plus{background:var(--pink);color:#fff;box-shadow:0 2px 8px rgba(255,61,127,.3)}
+
+.ev-add-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.ghost-btn{
+  background:var(--pink);border:none;color:#fff;
+  padding:6px 14px;border-radius:20px;font-size:12px;cursor:pointer;
+  font-family:'Noto Sans JP',sans-serif;font-weight:700;
+  box-shadow:0 2px 8px rgba(255,61,127,.3);
+}
+.ghost-btn:active{opacity:.6}
+
+.ev-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.ev-card{
+  background:var(--s1);border:1.5px solid var(--border);
+  border-radius:14px;padding:12px 14px;
+  display:flex;align-items:center;gap:10px;
+  box-shadow:0 2px 8px rgba(255,61,127,.06);
+}
+.ev-bar{width:3px;min-height:36px;border-radius:2px;background:linear-gradient(180deg,var(--pink),var(--coral));flex-shrink:0;align-self:stretch}
+.ev-info{flex:1;min-width:0}
+.ev-name{font-size:14px;font-weight:700;color:var(--text)}
+.ev-meta{font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ev-memo-text{font-size:11px;color:var(--sub);margin-top:3px}
+.ev-count-col{text-align:right;flex-shrink:0}
+.ev-count{font-family:'DotGothic16',monospace;font-size:20px;font-weight:400;color:var(--pink)}
+.ev-cost{font-size:10px;color:var(--muted);margin-top:2px}
+.ev-del{background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:4px 6px;flex-shrink:0}
+.ev-del:hover{color:var(--pink)}
+
+.memo-box{
+  background:var(--s1);border:1.5px solid var(--border);
+  border-radius:var(--r);padding:14px;margin-bottom:14px;
+  box-shadow:0 2px 8px rgba(255,61,127,.05);
+}
+.memo-box textarea{
+  width:100%;background:none;border:none;
+  color:var(--text);font-family:'Noto Sans JP',sans-serif;
+  font-size:16px;line-height:1.9;resize:none;outline:none;min-height:90px;
+}
+.memo-box textarea::placeholder{color:var(--muted)}
+
+.sec-label{font-size:10px;font-weight:700;color:var(--sub);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px}
+.danger-wrap{display:flex;justify-content:center;margin:4px 0 20px}
+.danger-btn{
+  background:none;border:1px solid #d93535;color:#d93535;
+  padding:9px 22px;border-radius:20px;font-size:13px;cursor:pointer;
+  font-family:'Noto Sans JP',sans-serif;
+}
+.save-banner{
+  position:fixed;bottom:0;left:0;right:0;max-width:520px;margin:0 auto;
+  background:linear-gradient(135deg,var(--pink),var(--coral));color:#fff;
+  padding:16px 20px;display:flex;align-items:center;justify-content:space-between;
+  z-index:60;animation:slideUp2 .2s ease;
+  font-family:'Noto Sans JP',sans-serif;
+}
+@keyframes slideUp2{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.save-banner span{font-size:14px;font-weight:700}
+.save-banner button{
+  background:#fff;color:var(--pink);border:none;
+  padding:8px 20px;border-radius:8px;font-size:14px;font-weight:900;
+  cursor:pointer;font-family:'Noto Sans JP',sans-serif;
+}
+
+.fab{
+  position:fixed;bottom:24px;right:20px;
+  width:58px;height:58px;border-radius:50%;
+  background:linear-gradient(135deg,var(--pink),var(--coral));
+  border:none;color:#fff;
+  font-size:26px;cursor:pointer;z-index:50;
+  box-shadow:0 6px 24px rgba(255,61,127,.45);
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .15s;
+}
+.fab:active{transform:scale(.88)}
+
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;display:none;align-items:flex-end}
+.overlay.open{display:flex}
+.modal{
+  background:var(--bg);border-radius:28px 28px 0 0;
+  padding:24px 16px 40px;width:100%;
+  animation:sup .22s ease;max-height:90vh;overflow-y:auto;
+  box-sizing:border-box;overflow-x:hidden;
+  border-top:2px solid var(--border);
+}
+@keyframes sup{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal h2{font-size:18px;font-weight:700;margin-bottom:18px;font-family:'Kaisei Decol',serif;color:var(--pink)}
+.ff{margin-bottom:12px}
+.ff label{font-size:11px;color:var(--muted);display:block;margin-bottom:5px}
+.ff input,.ff textarea{
+  width:100%;background:var(--s1);border:1.5px solid var(--border);
+  border-radius:var(--r-sm);padding:11px 14px;
+  color:var(--text);font-size:16px;
+  font-family:'Noto Sans JP',sans-serif;outline:none;-webkit-appearance:none;
+  box-sizing:border-box;
+}
+.ff input:focus,.ff textarea:focus{border-color:var(--pink);box-shadow:0 0 0 3px rgba(255,61,127,.12)}
+.ff textarea{resize:none;line-height:1.7;min-height:60px}
+.ff-row{display:flex;gap:10px}
+.ff-row .ff{flex:1}
+.m-acts{display:flex;gap:10px;margin-top:18px;width:100%;box-sizing:border-box;}
+.btn-cancel{flex:1;background:var(--s2);border:1.5px solid var(--border);border-radius:20px;padding:14px;color:var(--sub);font-size:15px;cursor:pointer;font-family:'Noto Sans JP',sans-serif}
+.btn-ok{flex:2;background:linear-gradient(135deg,var(--pink),var(--coral));border:none;border-radius:20px;padding:14px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;box-shadow:0 4px 14px rgba(255,61,127,.35)}
+.btn-cancel:active,.btn-ok:active{opacity:.7}
+
+.tag-checks{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.tag-check{
+  padding:6px 14px;border-radius:20px;
+  border:1.5px solid var(--border);background:var(--s1);
+  color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;
+}
+.tag-check.on{background:var(--pink);border-color:var(--pink);color:#fff}
+
+.inline-add{margin-top:6px}
+.inline-add input{
+  width:100%;background:var(--s1);border:1.5px solid var(--border);
+  border-radius:var(--r-sm);padding:9px 12px;color:var(--text);
+  font-size:16px;font-family:'Noto Sans JP',sans-serif;outline:none;
+  box-sizing:border-box;
+}
+.inline-add input:focus{border-color:var(--pink);box-shadow:0 0 0 3px rgba(255,61,127,.12)}
+.inline-add-hint{font-size:11px;color:var(--muted);margin-top:5px}
+.venue-hint{font-size:11px;color:var(--muted);margin-top:4px}
+.pwa-banner{
+  position:fixed;top:0;left:0;right:0;max-width:520px;margin:0 auto;
+  background:var(--text);color:#fff;
+  padding:14px 16px;z-index:100;
+  display:flex;align-items:flex-start;gap:12px;
+  box-shadow:0 4px 16px rgba(0,0,0,.2);
+}
+.pwa-banner-text{flex:1;font-size:13px;line-height:1.6}
+.pwa-banner-close{background:none;border:none;color:#fff;font-size:18px;cursor:pointer;flex-shrink:0;padding:0}
+.close-month-btn-inline{display:none}
+.month-nav{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:12px;
+  background:var(--s1);border:1.5px solid var(--border);
+  border-radius:20px;padding:6px 12px;
+  box-shadow:0 2px 8px rgba(255,61,127,.06);
+}
+.month-nav-btn{
+  background:none;border:none;color:var(--pink);
+  font-size:18px;cursor:pointer;padding:2px 8px;
+  font-weight:700;
+}
+.month-nav-btn:disabled{color:var(--border);cursor:default}
+.month-nav-label{
+  font-family:'Kaisei Decol',serif;font-size:16px;
+  font-weight:700;color:var(--text);
+}
+.month-card{
+  background:var(--s1);border:1.5px solid var(--border);
+  border-radius:18px;padding:16px;margin-bottom:12px;
+  box-shadow:0 2px 10px rgba(255,61,127,.07);
+}
+.year-summary{
+  background:var(--pink);border-radius:20px;
+  padding:14px 16px;margin-bottom:16px;
+  display:flex;align-items:center;justify-content:space-between;
+  box-shadow:0 4px 16px rgba(255,61,127,.25);
+}
+.year-summary-label{font-size:13px;color:rgba(255,255,255,.9);font-weight:700}
+.year-summary-val{font-family:'DotGothic16',monospace;font-size:26px;color:#fff}
+.year-month-card{
+  background:var(--s1);border:1.5px solid var(--border);
+  border-radius:16px;padding:14px;margin-bottom:10px;
+  box-shadow:0 2px 8px rgba(255,61,127,.05);
+  cursor:pointer;transition:all .15s;
+}
+.year-month-card:hover{border-color:var(--pink)}
+.year-month-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:10px;
+}
+.year-month-label{font-family:'Kaisei Decol',serif;font-size:15px;font-weight:700;color:var(--text)}
+.year-month-total{font-family:'DotGothic16',monospace;font-size:18px;color:var(--pink)}
+.year-member-bar{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.year-member-bar-name{font-size:12px;font-weight:700;color:var(--text);width:80px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.year-member-bar-track{flex:1;background:var(--s2);border-radius:4px;height:8px;overflow:hidden}
+.year-member-bar-fill{height:100%;background:linear-gradient(90deg,var(--pink),var(--coral));border-radius:4px;transition:width .3s}
+.year-member-bar-count{font-family:'DotGothic16',monospace;font-size:12px;color:var(--pink);width:30px;text-align:right;flex-shrink:0}
+.month-card-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:12px;
+}
+.month-card-title{font-family:'Kaisei Decol',serif;font-size:18px;font-weight:700;color:var(--pink)}
+.month-card-total{font-family:'DotGothic16',monospace;font-size:16px;color:var(--text)}
+.month-member-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:7px 0;border-bottom:1px solid var(--border);
+}
+.month-member-row:last-child{border-bottom:none}
+.month-member-name{font-size:14px;font-weight:700;color:var(--text)}
+.month-member-count{font-family:'DotGothic16',monospace;font-size:18px;color:var(--pink)}
+.month-member-input{
+  font-family:'DotGothic16',monospace;font-size:18px;color:var(--pink);
+  background:none;border:none;border-bottom:1.5px solid var(--border);
+  width:60px;text-align:right;outline:none;
+}
+.month-edit-btn{font-size:12px;color:var(--muted);background:none;border:none;cursor:pointer;padding:2px 6px}
+.last-updated{
+  text-align:center;font-size:12px;color:var(--sub);
+  font-family:'DotGothic16',monospace;
+  background:var(--s1);border:1.5px solid var(--border);
+  border-radius:20px;padding:6px 16px;
+  display:inline-block;margin:0 auto 14px;
+  box-shadow:0 2px 8px rgba(255,61,127,.06);
+}
+.last-updated-wrap{text-align:center;margin-bottom:6px}
+.sync-area{
+  width:100%;background:var(--s2);border:1.5px solid var(--border);
+  border-radius:var(--r-sm);padding:11px 14px;
+  color:var(--text);font-size:12px;font-family:monospace;
+  resize:none;outline:none;min-height:100px;line-height:1.5;
+}
+.sync-area:focus{border-color:var(--pink)}
+.copy-btn{
+  width:100%;background:var(--s3);border:1px solid var(--border);
+  color:var(--text);border-radius:var(--r-sm);padding:12px;
+  font-size:14px;font-weight:700;cursor:pointer;margin-top:8px;
+  font-family:"Noto Sans JP",sans-serif;transition:background .15s;
+}
+.copy-btn:active{opacity:.7}
+.copy-btn.copied{background:var(--mint);color:#000;border-color:var(--mint)}
+.sync-note{font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:14px}
+.setting-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 0;border-bottom:1px solid var(--border);
+}
+.setting-row:last-child{border-bottom:none}
+.setting-label{font-size:15px;font-weight:700}
+.setting-desc{font-size:11px;color:var(--muted);margin-top:2px}
+.empty{text-align:center;padding:52px 0;color:var(--muted);font-size:14px;line-height:2.4}
+.empty em{font-size:40px;font-style:normal;display:block;margin-bottom:10px}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading-screen">
+  <div class="loader"></div>
+  <div class="loading-txt">データを読み込み中…</div>
+</div>
+
+<div id="save-indicator">保存中…</div>
+
+<!-- HOME -->
+<div class="screen" id="sc-home">
+  <div class="hdr">
+    <div class="hdr-body">
+      <div class="hdr-title">📸 チェキカウンター</div>
+      <div class="hdr-sub">CHEKI TRACKER</div>
+    </div>
+    <div class="hdr-actions">
+      <button class="icon-btn" onclick="openSyncModal()" title="同期">⇄</button>
+      <button class="icon-btn active" id="btn-tile" onclick="setView('tile')" title="タイル">⊞</button>
+      <button class="icon-btn" id="btn-list" onclick="setView('list')" title="リスト">☰</button>
+      <button class="icon-btn" id="btn-sort" onclick="toggleSort()" title="枚数順">↓</button>
+      <button class="icon-btn" onclick="showYearView()" title="年間記録">🏆</button>
+      <button class="icon-btn" onclick="openSettingsModal()" title="設定">⚙</button>
+    </div>
+  </div>
+  <div class="scroll">
+    <div class="summary" id="home-summary">
+      <div class="sum-card">
+        <div class="sum-val" id="ht-members">0</div>
+        <div class="sum-lbl">推し人数</div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-val" id="ht-cheki">0</div>
+        <div class="sum-lbl">総チェキ枚数</div>
+      </div>
+      <div class="sum-card" id="ht-cost-card">
+        <div class="sum-val" id="ht-cost">¥0</div>
+        <div class="sum-lbl">総費用</div>
+      </div>
+    </div>
+    <div class="month-nav">
+      <button class="month-nav-btn" onclick="moveMonth(-1)">◀</button>
+      <div class="month-nav-label" id="month-nav-label">2026年2月</div>
+      <button class="month-nav-btn" onclick="moveMonth(1)" id="month-nav-next">▶</button>
+    </div>
+    <div class="tag-row" id="tag-filter-row"></div>
+    <div id="member-view"></div>
+  </div>
+  <button class="fab" onclick="openAddMemberModal()">＋</button>
+</div>
+
+<!-- DETAIL -->
+<div class="screen" id="sc-detail">
+  <div class="hdr">
+    <button class="hdr-back" onclick="saveAndGoHome()">‹</button>
+    <div class="hdr-body">
+      <div class="hdr-title" id="det-name">名前</div>
+      <div class="hdr-sub" id="det-tags-sub">タグ</div>
+    </div>
+    <div class="hdr-actions">
+      <button class="icon-btn" onclick="openEditModal()" title="編集">✎</button>
+    </div>
+  </div>
+  <div class="scroll">
+    <div class="big-ctr" id="simple-ctr">
+      <div class="sec-label" style="margin-bottom:0">チェキ枚数</div>
+      <div class="big-num" id="det-big-num">0</div>
+      <div class="ctr-btns">
+        <button class="c-btn c-minus" onclick="simpleChange(-1)">−</button>
+        <button class="c-btn c-plus" onclick="simpleChange(1)">＋</button>
+      </div>
+    </div>
+    <div id="shot-section">
+      <div id="shot-grid-wrap"></div>
+    </div>
+    <div id="cost-grid-wrap">
+      <div class="cost-grid">
+        <div class="cf">
+          <label>チェキ代（1枚）</label>
+          <div style="display:flex;align-items:baseline;gap:4px">
+            <span style="font-size:13px;color:var(--muted)">¥</span>
+            <input type="number" id="det-price" placeholder="600" oninput="savePriceRefresh()">
+          </div>
+        </div>
+        <div class="cf" style="text-align:right">
+          <label>合計費用</label>
+          <div class="cost-total" id="det-cost-total">¥0</div>
+        </div>
+      </div>
+    </div>
+    <div id="det-ev-section">
+      <div class="ev-add-row">
+        <div class="sec-label" style="margin-bottom:0">ライブ記録</div>
+        <button class="ghost-btn" onclick="openEventModal()">＋ 追加</button>
+      </div>
+      <div class="ev-list" id="det-ev-list"></div>
+    </div>
+    <div id="det-memo-section">
+      <div class="sec-label">メモ・感想</div>
+      <div class="memo-box">
+        <textarea id="det-memo" placeholder="ライブの感想、印象に残ったこと…" oninput="saveMemo()"></textarea>
+      </div>
+    </div>
+    <div style="text-align:center;margin:30px 0 24px;opacity:0.35">
+      <button onclick="deleteMember()" style="background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">推しを削除する</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Add Member -->
+<div class="overlay" id="modal-member">
+  <div class="modal">
+    <h2>推しを追加</h2>
+    <div class="ff">
+      <label>名前</label>
+      <input type="text" id="in-m-name" placeholder="例：○○ちゃん" maxlength="20">
+    </div>
+    <div class="ff">
+      <label>グループ（タグ）— 複数選択可</label>
+      <div class="tag-checks" id="modal-tag-checks"></div>
+      <div class="inline-add">
+        <input type="text" id="in-new-tag" placeholder="新しいグループ名（Enterで追加）" maxlength="20">
+        <div class="inline-add-hint">Enterで追加。「追加」ボタンを押すと推しも同時に登録されます。</div>
+      </div>
+    </div>
+    <div class="m-acts">
+      <button class="btn-cancel" onclick="closeModal('modal-member')">キャンセル</button>
+      <button class="btn-ok" onclick="submitMember()">追加</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Add Event -->
+<div class="overlay" id="modal-event">
+  <div class="modal">
+    <h2 id="ev-modal-title">ライブを記録</h2>
+    <div class="ff">
+      <label>ライブ名・イベント名</label>
+      <input type="text" id="in-ev-name" placeholder="例：定期公演 vol.12" maxlength="40">
+    </div>
+    <div class="ff">
+      <label>会場</label>
+      <input type="text" id="in-ev-venue" placeholder="例：新宿BLAZE" maxlength="40" list="venue-history" oninput="filterVenueList(this.value)">
+      <datalist id="venue-history"></datalist>
+      <div class="venue-hint" id="venue-hint"></div>
+    </div>
+    <div class="ff-row">
+      <div class="ff">
+        <label>日付</label>
+        <input type="date" id="in-ev-date">
+      </div>
+      <div class="ff">
+        <label>チェキ枚数</label>
+        <input type="number" id="in-ev-count" placeholder="0" min="0">
+      </div>
+    </div>
+    <div class="ff">
+      <label>メモ</label>
+      <textarea id="in-ev-memo" placeholder="感想など…" rows="2"></textarea>
+    </div>
+    <div class="m-acts">
+      <button class="btn-cancel" onclick="closeModal('modal-event')">キャンセル</button>
+      <button class="btn-ok" id="ev-submit-btn" onclick="submitEvent()">記録</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SHOT_TYPES = ['サインあり', 'サインなし', '写メ'];
+const STORAGE_KEY = 'cheki_data';
+
+let db = { members: [], tags: [], venues: [], settings: { shotMode: false, costMode: false, eventMode: true, memoMode: true }, monthlyRecords: [], monthData: {} };
+let currentMemberId = null;
+let activeTag = null;
+let viewMode = 'tile';
+let selectedNewTags = new Set();
+let saveTimer = null;
+let sortByCount = false;
+let displayOrder = [];
+// 月別データ管理
+function todayYM(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+}
+let currentYM = todayYM();
+function ymLabel(ym){ 
+  const [y,m] = ym.split('-'); 
+  return y+'年'+parseInt(m)+'月'; 
+}
+function prevYM(ym){
+  const [y,m] = ym.split('-').map(Number);
+  return m===1 ? (y-1)+'-12' : y+'-'+String(m-1).padStart(2,'0');
+}
+function nextYM(ym){
+  const [y,m] = ym.split('-').map(Number);
+  return m===12 ? (y+1)+'-01' : y+'-'+String(m+1).padStart(2,'0');
+}
+
+// ═══ STORAGE (Google Sheets) ═══
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzX-diciSZewr-ef1WU2Hel2qmpydqjZ4RosKU8yYg4wM_mPUVzadogjvhoHt7UlogY/exec';
+
+async function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      db = { members: [], tags: [], venues: [], settings: { shotMode: false, costMode: false, eventMode: true, memoMode: true }, ...parsed };
+    }
+  } catch(e) {}
+}
+
+async function saveData() {
+  showSaveIndicator();
+  const json = JSON.stringify(db);
+
+  // localStorageに即座に保存
+  try {
+    db.lastUpdated = new Date().toISOString();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+  } catch(e) {}
+
+  // Google Sheetsにも保存
+  try {
+    await fetch(GAS_URL, {
+      method: 'POST',
+      body: json
+    });
+  } catch(e) {
+    // Google Sheets未接続時は無視（localStorageで動作）
+  }
+
+  hideSaveIndicator();
+}
+
+// デバウンス保存（連打しても500ms後に1回だけ保存）
+function save() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => saveData(), 500);
+}
+
+function showSaveIndicator() {
+  document.getElementById('save-indicator').classList.add('show');
+}
+function hideSaveIndicator() {
+  setTimeout(() => document.getElementById('save-indicator').classList.remove('show'), 800);
+}
+
+// ═══ UTILS ═══
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function getMember(id){ return db.members.find(m=>m.id===id); }
+function memberTotal(m, ym){
+  ym = ym || currentYM;
+  if(!db.monthData) db.monthData = {};
+  if(!db.monthData[ym]) return 0;
+  const shots = db.monthData[ym][m.id+'_shots'] || {};
+  const simple = db.monthData[ym][m.id] || 0;
+  const shotTotal = SHOT_TYPES.reduce((s,t)=>s+(shots[t]||0),0);
+  return shotTotal > 0 ? shotTotal : simple;
+}
+function memberTotalShots(m, ym){
+  ym = ym || currentYM;
+  if(!db.monthData||!db.monthData[ym]) return {};
+  return db.monthData[ym][m.id+'_shots'] || {};
+}
+function allTotal(ym){ return db.members.reduce((s,m)=>s+memberTotal(m,ym),0); }
+function allCost(ym){ return db.members.reduce((s,m)=>s+memberTotal(m,ym)*(m.price||0),0); }
+
+function switchScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+
+// ═══ HOME ═══
+function showHome(){
+  switchScreen('sc-home');
+  renderHome();
+}
+
+function renderHome(){
+  const s = db.settings||{};
+  document.getElementById('ht-members').textContent = db.members.length;
+  document.getElementById('ht-cheki').textContent = allTotal(currentYM);
+  const costCard = document.getElementById('ht-cost-card');
+  if(s.costMode){
+    costCard.style.display='block';
+    const cost = allCost(currentYM);
+    document.getElementById('ht-cost').textContent =
+      cost>=10000 ? '¥'+(cost/10000).toFixed(1)+'万' : '¥'+cost.toLocaleString();
+  } else {
+    costCard.style.display='none';
+  }
+  // 月ナビ更新
+  document.getElementById('month-nav-label').textContent = ymLabel(currentYM);
+  const nextBtn = document.getElementById('month-nav-next');
+  if(nextBtn) nextBtn.disabled = currentYM >= todayYM();
+  renderTagFilter();
+  renderMemberView();
+}
+
+function moveMonth(dir){
+  currentYM = dir < 0 ? prevYM(currentYM) : nextYM(currentYM);
+  sortByCount = false;
+  displayOrder = [];
+  renderHome();
+}
+
+function renderTagFilter(){
+  const pills = [{id:null,name:'すべて'}, ...db.tags.map(t=>({id:t,name:t}))];
+  document.getElementById('tag-filter-row').innerHTML = pills.map(p=>`
+    <div class="tag-pill ${activeTag===p.id?'active':''}"
+      onclick="setActiveTag(${p.id===null?'null':'"'+esc(p.id)+'"'})">${esc(p.name)}</div>
+  `).join('');
+}
+
+function setActiveTag(t){ activeTag=t; renderHome(); }
+
+function setView(v){
+  viewMode=v;
+  document.getElementById('btn-tile').classList.toggle('active',v==='tile');
+  document.getElementById('btn-list').classList.toggle('active',v==='list');
+  renderMemberView();
+}
+
+function renderMemberView(){
+  const el = document.getElementById('member-view');
+  let list = activeTag===null ? [...db.members] : db.members.filter(m=>(m.tags||[]).includes(activeTag));
+  if(sortByCount){
+    // ソートON：枚数順に並べてdisplayOrderを更新
+    list.sort((a,b) => memberTotal(b) - memberTotal(a));
+    displayOrder = list.map(m=>m.id);
+  } else if(displayOrder.length > 0){
+    // ソートOFF：displayOrderの順番を維持
+    list.sort((a,b) => {
+      const ai = displayOrder.indexOf(a.id);
+      const bi = displayOrder.indexOf(b.id);
+      if(ai===-1 && bi===-1) return 0;
+      if(ai===-1) return 1;
+      if(bi===-1) return -1;
+      return ai - bi;
+    });
+  }
+  if(list.length===0){
+    el.innerHTML=`<div class="empty"><em>🌸</em>${activeTag?'このグループに推しはいません':'＋ボタンで推しを追加しよう'}</div>`;
+    return;
+  }
+  if(viewMode==='tile'){
+    el.innerHTML=`<div class="tile-grid">${list.map(tileCard).join('')}</div>`;
+  } else {
+    el.innerHTML=list.map(listCard).join('');
+  }
+}
+
+function tileCard(m){
+  const cnt=memberTotal(m);
+  const s=db.settings||{};
+  const cost=cnt*(m.price||0);
+  return `<div class="tile-card" onclick="showDetail('${m.id}')">
+    <div class="tile-name">${esc(m.name)}</div>
+    <div class="tile-tags">${(m.tags||[]).map(t=>`<span class="tile-tag">${esc(t)}</span>`).join('')}</div>
+    <div class="tile-count">${cnt}</div>
+    ${s.costMode && cost>0 ? `<div class="tile-cost">¥${cost.toLocaleString()}</div>` : ''}
+    <div class="tile-ctr-btns" onclick="event.stopPropagation()">
+      <button class="tile-minus" onclick="tileChange('${m.id}',-1)">−</button>
+      <button class="tile-plus" onclick="tileChange('${m.id}',1)">＋</button>
+    </div>
+  </div>`;
+}
+
+function listCard(m){
+  const cnt=memberTotal(m), cost=cnt*(m.price||0);
+  const s=db.settings||{};
+  return `<div class="list-card" onclick="showDetail('${m.id}')">
+    <div class="list-info">
+      <div class="list-name">${esc(m.name)}</div>
+      <div class="list-tags">${(m.tags||[]).map(t=>`<span class="list-tag">${esc(t)}</span>`).join('')}</div>
+    </div>
+    <div class="list-right">
+      ${s.costMode && cost>0?`<div class="list-cost">¥${cost.toLocaleString()}</div>`:''}
+      <div class="list-count">${cnt}</div>
+      <div class="list-btns" onclick="event.stopPropagation()">
+        <button class="list-minus" onclick="tileChange('${m.id}',-1)">−</button>
+        <button class="list-plus" onclick="tileChange('${m.id}',1)">＋</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ═══ ADD MEMBER ═══
+function openAddMemberModal(){
+  document.getElementById('in-m-name').value='';
+  document.getElementById('in-new-tag').value='';
+  selectedNewTags=new Set();
+  renderModalTags();
+  openModal('modal-member');
+  setTimeout(()=>document.getElementById('in-m-name').focus(),120);
+}
+
+function renderModalTags(){
+  const el=document.getElementById('modal-tag-checks');
+  if(db.tags.length===0){
+    el.innerHTML='<span style="font-size:12px;color:var(--muted)">まだグループがありません</span>';
+    return;
+  }
+  el.innerHTML=db.tags.map(t=>`
+    <div class="tag-check ${selectedNewTags.has(t)?'on':''}" onclick="toggleModalTag('${esc(t)}')">${esc(t)}</div>
+  `).join('');
+}
+
+function toggleModalTag(t){
+  selectedNewTags.has(t)?selectedNewTags.delete(t):selectedNewTags.add(t);
+  renderModalTags();
+}
+
+function addNewTag(){
+  const v=document.getElementById('in-new-tag').value.trim();
+  if(!v||db.tags.includes(v)) return;
+  db.tags.push(v);
+  selectedNewTags.add(v);
+  save();
+  document.getElementById('in-new-tag').value='';
+  renderModalTags();
+}
+
+// submitMemberでもグループ名が入力されていれば自動追加
+function maybeAddTagFromInput(){
+  const v=document.getElementById('in-new-tag').value.trim();
+  if(v && !db.tags.includes(v)){
+    db.tags.push(v);
+    selectedNewTags.add(v);
+  } else if(v && db.tags.includes(v)){
+    selectedNewTags.add(v);
+  }
+}
+
+function submitMember(){
+  const name=document.getElementById('in-m-name').value.trim();
+  if(!name) return;
+  maybeAddTagFromInput();
+  db.members.push({
+    id:uid(), name, tags:[...selectedNewTags],
+    count:0, price:0, shotMode:true, shots:{}, costMode:false, events:[], memo:''
+  });
+  save();
+  closeModal('modal-member');
+  renderHome();
+}
+
+// ═══ DETAIL ═══
+function showDetail(id){
+  currentMemberId=id;
+  switchScreen('sc-detail');
+  renderDetail();
+}
+
+function renderDetail(){
+  const m=getMember(currentMemberId);
+  const s=db.settings||{};
+  document.getElementById('det-name').textContent=m.name;
+  document.getElementById('det-tags-sub').textContent=(m.tags||[]).join('  ·  ')||'タグなし';
+  document.getElementById('det-memo').value=m.memo||'';
+  // shot section
+  document.getElementById('shot-section').style.display = s.shotMode ? 'block' : 'none';
+  renderSimpleOrShot(m);
+  // cost section
+  document.getElementById('cost-grid-wrap').style.display = s.costMode ? 'block' : 'none';
+  if(s.costMode){
+    document.getElementById('det-price').value=m.price||'';
+    refreshCostDisplay(m);
+  }
+  // event section
+  document.getElementById('det-ev-section').style.display = s.eventMode ? 'block' : 'none';
+  if(s.eventMode) renderDetailEvents(m);
+  // memo section
+  document.getElementById('det-memo-section').style.display = s.memoMode ? 'block' : 'none';
+}
+
+// cost managed via settings
+
+function renderSimpleOrShot(m){
+  const s = db.settings||{};
+  const simpleCtr=document.getElementById('simple-ctr');
+  const shots = memberTotalShots(m, currentYM);
+  const total = SHOT_TYPES.reduce((sum,t)=>sum+(shots[t]||0),0);
+  if(!s.shotMode){
+    simpleCtr.style.display='flex';
+    document.getElementById('det-big-num').textContent=total;
+    document.getElementById('shot-grid-wrap').innerHTML='';
+  } else {
+    simpleCtr.style.display='none';
+    renderShotGrid(m);
+  }
+}
+
+function renderShotGrid(m){
+  const shots = memberTotalShots(m, currentYM);
+  document.getElementById('shot-grid-wrap').innerHTML=
+    `<div class="shot-grid">${SHOT_TYPES.map((t,i)=>`
+      <div class="shot-card">
+        <div class="shot-name">${esc(t)}</div>
+        <div class="shot-count" id="sc-${i}">${shots[t]||0}</div>
+        <div class="shot-btns">
+          <button class="s-btn s-minus" onclick="shotChange(${i},-1)">−</button>
+          <button class="s-btn s-plus" onclick="shotChange(${i},1)">＋</button>
+        </div>
+      </div>`).join('')}</div>`;
+}
+
+function toggleShots(){
+  const m=getMember(currentMemberId);
+  m.shotMode=!m.shotMode;
+  // データはshots管理で統一。表示切り替えのみ
+  save();
+  renderSimpleOrShot(m);
+  refreshCostDisplay(m);
+}
+
+function simpleChange(delta){
+  const m=getMember(currentMemberId);
+  if(!db.monthData) db.monthData={};
+  if(!db.monthData[currentYM]) db.monthData[currentYM]={};
+  const shots = db.monthData[currentYM][m.id+'_shots'] || {};
+  shots['サインあり']=Math.max(0,(shots['サインあり']||0)+delta);
+  db.monthData[currentYM][m.id+'_shots']=shots;
+  const total=SHOT_TYPES.reduce((s,t)=>s+(shots[t]||0),0);
+  const el=document.getElementById('det-big-num');
+  el.textContent=total;
+  el.classList.remove('bump');void el.offsetWidth;el.classList.add('bump');
+  refreshCostDisplay(m);
+}
+
+function shotChange(idx,delta){
+  const m=getMember(currentMemberId);
+  if(!db.monthData) db.monthData={};
+  if(!db.monthData[currentYM]) db.monthData[currentYM]={};
+  const shots = db.monthData[currentYM][m.id+'_shots'] || {};
+  const type=SHOT_TYPES[idx];
+  shots[type]=Math.max(0,(shots[type]||0)+delta);
+  db.monthData[currentYM][m.id+'_shots']=shots;
+  save();
+  const el=document.getElementById('sc-'+idx);
+  if(el){ el.textContent=shots[type]; el.classList.remove('bump');void el.offsetWidth;el.classList.add('bump'); }
+  refreshCostDisplay(m);
+}
+
+function savePriceRefresh(){
+  const m=getMember(currentMemberId);
+  m.price=parseInt(document.getElementById('det-price').value)||0;
+  save();
+  refreshCostDisplay(m);
+}
+
+function refreshCostDisplay(m){
+  document.getElementById('det-cost-total').textContent='¥'+(memberTotal(m)*(m.price||0)).toLocaleString();
+}
+
+function saveMemo(){
+  const m=getMember(currentMemberId);
+  m.memo=document.getElementById('det-memo').value;
+  save();
+}
+
+// ═══ EVENTS ═══
+function buildVenueDatalist(val){
+  const matches=db.venues.filter(v=>v.toLowerCase().includes((val||'').toLowerCase()));
+  document.getElementById('venue-history').innerHTML=matches.map(v=>`<option value="${esc(v)}">`).join('');
+  document.getElementById('venue-hint').textContent=matches.length>0&&val?`候補: ${matches.slice(0,3).join('、')}` :'';
+}
+function filterVenueList(v){ buildVenueDatalist(v); }
+
+function openEventModal(){
+  document.getElementById('in-ev-name').value='';
+  document.getElementById('in-ev-venue').value='';
+  document.getElementById('in-ev-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('in-ev-count').value='';
+  document.getElementById('in-ev-memo').value='';
+  buildVenueDatalist('');
+  openModal('modal-event');
+  setTimeout(()=>document.getElementById('in-ev-name').focus(),120);
+}
+
+function submitEvent(){
+  const name=document.getElementById('in-ev-name').value.trim();
+  if(!name) return;
+  const venue=document.getElementById('in-ev-venue').value.trim();
+  const count=parseInt(document.getElementById('in-ev-count').value)||0;
+  const m=getMember(currentMemberId);
+  if(!m.events) m.events=[];
+  m.events.push({
+    id:uid(), name, venue,
+    date:document.getElementById('in-ev-date').value,
+    count, memo:document.getElementById('in-ev-memo').value.trim()
+  });
+  if(venue&&!db.venues.includes(venue)) db.venues.push(venue);
+  save();
+  closeModal('modal-event');
+  renderDetailEvents(m);
+}
+
+function renderDetailEvents(m){
+  const el=document.getElementById('det-ev-list');
+  if(!m.events||m.events.length===0){
+    el.innerHTML='<div style="font-size:13px;color:var(--muted);padding:4px 0 8px">まだ記録がありません</div>';
+    return;
+  }
+  el.innerHTML=[...m.events].sort((a,b)=>b.date.localeCompare(a.date)).map(ev=>{
+    const cost=ev.count*(m.price||0);
+    return `<div class="ev-card">
+      <div class="ev-bar"></div>
+      <div class="ev-info">
+        <div class="ev-name">${esc(ev.name)}</div>
+        <div class="ev-meta">${ev.date}${ev.venue?' 📍'+esc(ev.venue):''}</div>
+        ${ev.memo?`<div class="ev-memo-text">${esc(ev.memo.slice(0,40))}${ev.memo.length>40?'…':''}</div>`:''}
+      </div>
+      <div class="ev-count-col">
+        <div class="ev-count">${ev.count}枚</div>
+        ${cost>0?`<div class="ev-cost">¥${cost.toLocaleString()}</div>`:''}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
+        <button class="ev-del" onclick="editEvent('${ev.id}')" style="color:var(--pink)">✎</button>
+        <button class="ev-del" onclick="deleteEvent('${ev.id}')">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function deleteEvent(eid){
+  const m=getMember(currentMemberId);
+  m.events=m.events.filter(e=>e.id!==eid);
+  save();
+  renderDetailEvents(m);
+}
+
+function deleteMember(){
+  const m=getMember(currentMemberId);
+  if(!confirm(`「${m.name}」を削除しますか？`)) return;
+  db.members=db.members.filter(x=>x.id!==currentMemberId);
+  save();
+  showHome();
+}
+
+// ═══ MODAL CLOSE ON OVERLAY ═══
+document.querySelectorAll('.overlay').forEach(el=>{
+  el.addEventListener('click',e=>{ if(e.target===el) el.classList.remove('open'); });
+});
+document.getElementById('in-m-name').addEventListener('keydown',e=>{ if(e.key==='Enter')submitMember(); });
+document.getElementById('in-new-tag').addEventListener('keydown',e=>{ if(e.key==='Enter'){ addNewTag(); } });
+
+
+
+// ═══ 自動保存 ═══
+function saveAndGoHome(){
+  save();
+  showHome();
+}
+
+// ═══ EDIT MEMBER ═══
+let editSelectedTags = new Set();
+
+function openEditModal(){
+  const m = getMember(currentMemberId);
+  document.getElementById('in-edit-name').value = m.name;
+  document.getElementById('in-edit-new-tag').value = '';
+  editSelectedTags = new Set(m.tags||[]);
+  renderEditTags();
+  openModal('modal-edit');
+  setTimeout(()=>document.getElementById('in-edit-name').focus(),120);
+}
+
+function renderEditTags(){
+  const el = document.getElementById('edit-tag-checks');
+  if(db.tags.length===0){
+    el.innerHTML='<span style="font-size:12px;color:var(--muted)">まだグループがありません</span>';
+    return;
+  }
+  el.innerHTML = db.tags.map(t=>`
+    <div class="tag-check ${editSelectedTags.has(t)?'on':''}" onclick="toggleEditTag('${t}')">${t}</div>
+  `).join('');
+}
+
+function toggleEditTag(t){
+  editSelectedTags.has(t)?editSelectedTags.delete(t):editSelectedTags.add(t);
+  renderEditTags();
+}
+
+function addEditTag(){
+  const v = document.getElementById('in-edit-new-tag').value.trim();
+  if(!v||db.tags.includes(v)) return;
+  db.tags.push(v);
+  editSelectedTags.add(v);
+  save();
+  document.getElementById('in-edit-new-tag').value='';
+  renderEditTags();
+}
+
+function submitEdit(){
+  const name = document.getElementById('in-edit-name').value.trim();
+  if(!name) return;
+  const m = getMember(currentMemberId);
+  m.name = name;
+  m.tags = [...editSelectedTags];
+  save();
+  closeModal('modal-edit');
+  renderDetail();
+}
+
+// ═══ SYNC (EXPORT/IMPORT) ═══
+function openSyncModal() {
+  document.getElementById('export-area').value = JSON.stringify(db, null, 2);
+  document.getElementById('import-area').value = '';
+  document.getElementById('copy-btn').textContent = 'コピーする';
+  document.getElementById('copy-btn').classList.remove('copied');
+  openModal('modal-sync');
+}
+
+function copyExport() {
+  const text = document.getElementById('export-area').value;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('copy-btn');
+      btn.textContent = 'コピーしました！';
+      btn.classList.add('copied');
+    });
+  } else {
+    // fallback for older Safari
+    const el = document.getElementById('export-area');
+    el.select();
+    document.execCommand('copy');
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = 'コピーしました！';
+    btn.classList.add('copied');
+  }
+}
+
+function doImport() {
+  const text = document.getElementById('import-area').value.trim();
+  if (!text) { alert('データを貼り付けてください'); return; }
+  try {
+    const parsed = JSON.parse(text);
+    if (!parsed.members) throw new Error('invalid');
+    if (!confirm(`${parsed.members.length}人のデータをインポートします。\n現在のデータは上書きされます。よろしいですか？`)) return;
+    db = { members: [], tags: [], venues: [], ...parsed };
+    save();
+    closeModal('modal-sync');
+    renderHome();
+    alert('インポートしました！');
+  } catch(e) {
+    alert('データの形式が正しくありません。エクスポートしたテキストをそのまま貼り付けてください。');
+  }
+}
+
+
+// ═══ SETTINGS ═══
+function openSettingsModal(){
+  const s = db.settings;
+  document.getElementById('st-shot').classList.toggle('on', !!s.shotMode);
+  document.getElementById('st-cost').classList.toggle('on', !!s.costMode);
+  document.getElementById('st-event').classList.toggle('on', !!s.eventMode);
+  document.getElementById('st-memo').classList.toggle('on', !!s.memoMode);
+  openModal('modal-settings');
+}
+
+function toggleSetting(key){
+  if(!db.settings) db.settings = {};
+  db.settings[key] = !db.settings[key];
+  document.getElementById({
+    shotMode:'st-shot', costMode:'st-cost',
+    eventMode:'st-event', memoMode:'st-memo'
+  }[key]).classList.toggle('on', db.settings[key]);
+  save();
+}
+
+// ═══ TILE QUICK COUNT ═══
+function tileChange(id, delta){
+  if(!db.monthData) db.monthData = {};
+  if(!db.monthData[currentYM]) db.monthData[currentYM] = {};
+  const shots = db.monthData[currentYM][id+'_shots'] || {};
+  shots['サインあり'] = Math.max(0, (shots['サインあり']||0) + delta);
+  db.monthData[currentYM][id+'_shots'] = shots;
+  save();
+  if(sortByCount){
+    sortByCount = false;
+    document.getElementById('btn-sort').classList.remove('active');
+  }
+  renderHome();
+}
+
+// ═══ SORT ═══
+function toggleSort(){
+  sortByCount = !sortByCount;
+  document.getElementById('btn-sort').classList.toggle('active', sortByCount);
+  renderMemberView();
+}
+
+// ═══ PWA BANNER ═══
+function checkPwaBanner(){
+  // ホーム画面から起動している場合は表示しない
+  const isStandalone = window.navigator.standalone === true ||
+    window.matchMedia('(display-mode: standalone)').matches;
+  if(isStandalone) return;
+  // 一度閉じたら表示しない
+  if(localStorage.getItem('pwa_banner_closed')) return;
+  document.getElementById('pwa-banner').style.display='flex';
+}
+function closePwaBanner(){
+  document.getElementById('pwa-banner').style.display='none';
+  localStorage.setItem('pwa_banner_closed', '1');
+}
+
+
+// ═══ MONTHLY RECORDS ═══
+function confirmCloseMonth(){
+  const now = new Date();
+  const label = `${now.getFullYear()}年${now.getMonth()+1}月`;
+  if(!confirm(`${label}の集計を締めますか？\n全メンバーのカウントがゼロになります。`)) return;
+  closeMonth(label);
+}
+
+function closeMonth(label){
+  if(!db.monthlyRecords) db.monthlyRecords = [];
+  // 現在の枚数をスナップショット
+  const snapshot = db.members.map(m => ({
+    id: m.id,
+    name: m.name,
+    tags: m.tags||[],
+    total: memberTotal(m)
+  }));
+  const record = {
+    id: uid(),
+    label,
+    closedAt: new Date().toISOString(),
+    members: snapshot,
+    grandTotal: snapshot.reduce((s,m)=>s+m.total, 0)
+  };
+  db.monthlyRecords.unshift(record);
+  // 全メンバーをリセット
+  db.members.forEach(m => {
+    m.shots = {};
+    m.count = 0;
+  });
+  save();
+  renderHome();
+  alert(`${label}の集計を締めました！`);
+}
+
+let currentYearView = new Date().getFullYear();
+
+function showYearView(){
+  currentYearView = parseInt(currentYM.split('-')[0]);
+  switchScreen('screen-year');
+  renderYearView();
+}
+
+function moveYear(dir){
+  currentYearView += dir;
+  document.getElementById('year-nav-next').disabled = currentYearView >= new Date().getFullYear();
+  renderYearView();
+}
+
+function renderYearView(){
+  document.getElementById('year-view-title').textContent = currentYearView + '年';
+  document.getElementById('year-nav-next').disabled = currentYearView >= new Date().getFullYear();
+  const el = document.getElementById('year-scroll');
+  
+  // その年の全月データを集計
+  const months = [];
+  for(let m=1; m<=12; m++){
+    const ym = currentYearView + '-' + String(m).padStart(2,'0');
+    const total = allTotal(ym);
+    if(total > 0 || ym <= currentYM){
+      months.push({ ym, label: m+'月', total });
+    }
+  }
+  
+  const yearTotal = months.reduce((s,x)=>s+x.total, 0);
+  const maxMonth = Math.max(...months.map(x=>x.total), 1);
+  
+  // メンバーごとの年間合計
+  const memberTotals = db.members.map(m => ({
+    name: m.name,
+    total: months.reduce((s,mo) => s + memberTotal(m, mo.ym), 0)
+  })).filter(x=>x.total>0).sort((a,b)=>b.total-a.total);
+  
+  const maxMember = Math.max(...memberTotals.map(x=>x.total), 1);
+  
+  let html = `<div class="year-summary">
+    <div>
+      <div class="year-summary-label">${currentYearView}年 総チェキ枚数</div>
+      <div class="year-summary-val">${yearTotal} 枚</div>
+    </div>
+  </div>`;
+  
+  // メンバー別年間ランキング
+  if(memberTotals.length > 0){
+    html += `<div class="month-card" style="margin-bottom:16px">
+      <div class="month-card-header"><div class="month-card-title">推し別年間合計</div></div>
+      ${memberTotals.map(m=>`
+        <div class="year-member-bar">
+          <div class="year-member-bar-name">${esc(m.name)}</div>
+          <div class="year-member-bar-track">
+            <div class="year-member-bar-fill" style="width:${Math.round(m.total/maxMember*100)}%"></div>
+          </div>
+          <div class="year-member-bar-count">${m.total}</div>
+        </div>`).join('')}
+    </div>`;
+  }
+  
+  // 月別カード
+  const monthCards = months.map(mo => {
+    const memberRows = db.members.map(m=>({
+      name:m.name, cnt: memberTotal(m, mo.ym)
+    })).filter(x=>x.cnt>0).sort((a,b)=>b.cnt-a.cnt);
+    const maxCnt = Math.max(...memberRows.map(x=>x.cnt), 1);
+    
+    return `<div class="year-month-card" onclick="goToMonth('${mo.ym}')">
+      <div class="year-month-header">
+        <div class="year-month-label">${mo.label}</div>
+        <div class="year-month-total">${mo.total}枚</div>
+      </div>
+      ${memberRows.map(m=>`
+        <div class="year-member-bar">
+          <div class="year-member-bar-name">${esc(m.name)}</div>
+          <div class="year-member-bar-track">
+            <div class="year-member-bar-fill" style="width:${Math.round(m.cnt/maxCnt*100)}%"></div>
+          </div>
+          <div class="year-member-bar-count">${m.cnt}</div>
+        </div>`).join('')}
+      ${mo.total===0?'<div style="font-size:12px;color:var(--muted)">記録なし</div>':''}
+    </div>`;
+  }).join('');
+  
+  html += monthCards || '<div class="empty"><em>📊</em>この年のデータがありません</div>';
+  el.innerHTML = html;
+}
+
+function goToMonth(ym){
+  currentYM = ym;
+  showHome();
+  renderHome();
+}
+
+function showHistory(){
+  showYearView();
+}
+
+function renderMonthCard(r){
+  const rows = r.members
+    .filter(m => m.total > 0)
+    .sort((a,b) => b.total - a.total)
+    .map(m => `
+      <div class="month-member-row">
+        <div class="month-member-name">${esc(m.name)}</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input class="month-member-input" type="number" min="0"
+            value="${m.total}"
+            onchange="updateMonthMember('${r.id}','${m.id}',this.value)"
+          >
+          <span style="font-size:12px;color:var(--muted)">枚</span>
+        </div>
+      </div>`).join('');
+
+  const zeroMembers = r.members.filter(m => m.total === 0);
+  const zeroRow = zeroMembers.length > 0
+    ? `<div style="font-size:11px;color:var(--muted);margin-top:8px">${zeroMembers.map(m=>esc(m.name)).join('・')}：0枚</div>`
+    : '';
+
+  return `<div class="month-card">
+    <div class="month-card-header">
+      <div class="month-card-title">${esc(r.label)}</div>
+      <div class="month-card-total">合計 <span style="font-size:20px">${r.grandTotal}</span> 枚</div>
+    </div>
+    ${rows}
+    ${zeroRow}
+  </div>`;
+}
+
+function updateMonthMember(recordId, memberId, newVal){
+  const r = (db.monthlyRecords||[]).find(x=>x.id===recordId);
+  if(!r) return;
+  const m = r.members.find(x=>x.id===memberId);
+  if(!m) return;
+  m.total = parseInt(newVal)||0;
+  r.grandTotal = r.members.reduce((s,x)=>s+x.total, 0);
+  save();
+  // 合計を更新表示
+  renderHistory();
+}
+
+// ═══ INIT ═══
+(async () => {
+  await loadData();
+  document.getElementById('loading-screen').classList.add('hidden');
+  switchScreen('sc-home');
+  renderHome();
+})();
+</script>
+<!-- SAVE BANNER removed -->
+
+<!-- MODAL: Edit Member -->
+<div class="overlay" id="modal-edit">
+  <div class="modal">
+    <h2>推しを編集</h2>
+    <div class="ff">
+      <label>名前</label>
+      <input type="text" id="in-edit-name" maxlength="20">
+    </div>
+    <div class="ff">
+      <label>グループ（タグ）</label>
+      <div class="tag-checks" id="edit-tag-checks"></div>
+      <div class="inline-add">
+        <input type="text" id="in-edit-new-tag" placeholder="新しいグループ名（Enterで追加）" maxlength="20">
+        <div class="inline-add-hint">Enterで追加します</div>
+      </div>
+    </div>
+    <div class="m-acts">
+      <button class="btn-cancel" onclick="closeModal('modal-edit')">キャンセル</button>
+      <button class="btn-ok" onclick="submitEdit()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN: Year View -->
+<div class="screen" id="screen-year">
+  <div class="hdr">
+    <button class="hdr-back" onclick="showHome()">‹</button>
+    <div class="hdr-body">
+      <div class="hdr-title" id="year-view-title">年間記録</div>
+    </div>
+    <div class="hdr-actions">
+      <button class="icon-btn" onclick="moveYear(-1)">◀</button>
+      <button class="icon-btn" onclick="moveYear(1)" id="year-nav-next">▶</button>
+    </div>
+  </div>
+  <div class="scroll" id="year-scroll"></div>
+</div>
+
+<!-- MODAL: Settings -->
+<div class="overlay" id="modal-settings">
+  <div class="modal">
+    <h2>⚙ 設定</h2>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">チェキ種別</div>
+        <div class="setting-desc">サインあり・サインなし・写メで分類</div>
+      </div>
+      <button class="toggle-switch" id="st-shot" onclick="toggleSetting('shotMode')"></button>
+    </div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">費用を記録する</div>
+        <div class="setting-desc">チェキ代と合計費用を表示</div>
+      </div>
+      <button class="toggle-switch" id="st-cost" onclick="toggleSetting('costMode')"></button>
+    </div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">ライブ記録</div>
+        <div class="setting-desc">ライブ・イベントごとの記録欄</div>
+      </div>
+      <button class="toggle-switch" id="st-event" onclick="toggleSetting('eventMode')"></button>
+    </div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">メモ・感想欄</div>
+        <div class="setting-desc">推しへの感想を記録</div>
+      </div>
+      <button class="toggle-switch" id="st-memo" onclick="toggleSetting('memoMode')"></button>
+    </div>
+    <div class="m-acts" style="margin-top:20px">
+      <button class="btn-cancel" onclick="closeModal('modal-settings')">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Sync -->
+<div class="overlay" id="modal-sync">
+  <div class="modal">
+    <h2>📲 デバイス間でデータを移す</h2>
+    <p class="sync-note">自動同期ができないため、コピペで手動で移してください。<br>① このデバイスでエクスポート → テキストをコピー<br>② 別のデバイスでインポート → テキストを貼り付け</p>
+
+    <div class="ff">
+      <label>▼ エクスポート（このデバイスのデータ）</label>
+      <textarea class="sync-area" id="export-area" readonly placeholder="読み込み中…"></textarea>
+      <button class="copy-btn" id="copy-btn" onclick="copyExport()">コピーする</button>
+    </div>
+
+    <div class="ff" style="margin-top:18px">
+      <label>▼ インポート（別デバイスからのデータを貼り付け）</label>
+      <textarea class="sync-area" id="import-area" placeholder="ここにペーストしてください…"></textarea>
+      <button class="copy-btn" onclick="doImport()" style="background:var(--pink);border-color:var(--pink);color:#fff">インポートする</button>
+    </div>
+
+    <div class="m-acts" style="margin-top:8px">
+      <button class="btn-cancel" onclick="closeModal('modal-sync')">閉じる</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
