@@ -407,6 +407,13 @@ body{
   color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;
 }
 .tag-check.on{background:var(--pink);border-color:var(--pink);color:#fff}
+.tag-check-wrap{display:flex;align-items:center;gap:2px}
+.tag-del-btn{
+  background:none;border:none;color:var(--muted);
+  font-size:11px;cursor:pointer;padding:2px 4px;
+  opacity:0.5;
+}
+.tag-del-btn:hover{opacity:1;color:var(--pink)}
 
 .inline-add{margin-top:6px}
 .inline-add input{
@@ -1267,15 +1274,33 @@ function addEditTag(){
   const v = document.getElementById('in-edit-new-tag').value.trim();
   if(!v||db.tags.includes(v)) return;
   db.tags.push(v);
+  editSelectedTags.clear();
   editSelectedTags.add(v);
   save();
   document.getElementById('in-edit-new-tag').value='';
   renderEditTags();
 }
 
+function deleteTag(t){
+  if(!confirm(`グループ「${t}」を削除しますか？
+所属メンバーからも外れます。`)) return;
+  db.tags = db.tags.filter(x=>x!==t);
+  db.members.forEach(m=>{ m.tags=(m.tags||[]).filter(x=>x!==t); });
+  editSelectedTags.delete(t);
+  save();
+  renderEditTags();
+}
+
 function submitEdit(){
   const name = document.getElementById('in-edit-name').value.trim();
   if(!name) return;
+  // 入力欄に文字があれば新グループとして追加
+  const newTag = document.getElementById('in-edit-new-tag').value.trim();
+  if(newTag){
+    if(!db.tags.includes(newTag)) db.tags.push(newTag);
+    editSelectedTags.clear();
+    editSelectedTags.add(newTag);
+  }
   const m = getMember(currentMemberId);
   m.name = name;
   m.tags = [...editSelectedTags];
