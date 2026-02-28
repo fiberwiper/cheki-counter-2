@@ -141,6 +141,20 @@ body{
   box-shadow:0 2px 6px rgba(255,61,127,.06);
 }
 .tag-pill.active{background:var(--pink);border-color:var(--pink);color:#fff;box-shadow:0 3px 10px rgba(255,61,127,.3)}
+.tag-edit-btn{
+  flex-shrink:0;padding:6px 12px;border-radius:20px;
+  border:1.5px solid var(--border);background:var(--s1);
+  color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;
+  white-space:nowrap;
+}
+.tag-edit-btn.active{background:var(--pink);border-color:var(--pink);color:#fff}
+.tag-pill-wrap{display:flex;align-items:center;gap:2px;flex-shrink:0}
+.tag-pill-del{
+  background:none;border:none;color:#fff;
+  font-size:10px;cursor:pointer;padding:0 4px 0 0;
+  font-weight:700;opacity:0.8;
+}
+.tag-pill-del:active{opacity:.4}
 
 /* TILE */
 .tile-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;width:100%}
@@ -591,7 +605,10 @@ body{
       <div class="month-nav-label" id="month-nav-label">2026年2月</div>
       <button class="month-nav-btn" onclick="moveMonth(1)" id="month-nav-next">▶</button>
     </div>
-    <div class="tag-row" id="tag-filter-row"></div>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
+      <div class="tag-row" id="tag-filter-row" style="margin-bottom:0;flex:1"></div>
+      <button class="tag-edit-btn" id="tag-edit-toggle" onclick="toggleTagEditMode()">編集</button>
+    </div>
     <div id="member-view"></div>
   </div>
   <button class="fab" onclick="openAddMemberModal()">＋</button>
@@ -731,6 +748,7 @@ function todayYM(){
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
 }
 let currentYM = todayYM();
+let tagEditMode = false;
 function ymLabel(ym){ 
   const [y,m] = ym.split('-'); 
   return y+'年'+parseInt(m)+'月'; 
@@ -856,12 +874,43 @@ function moveMonth(dir){
   renderHome();
 }
 
+function toggleTagEditMode(){
+  tagEditMode = !tagEditMode;
+  document.getElementById('tag-edit-toggle').classList.toggle('active', tagEditMode);
+  document.getElementById('tag-edit-toggle').textContent = tagEditMode ? '完了' : '編集';
+  renderTagFilter();
+}
+
 function renderTagFilter(){
-  const pills = [{id:null,name:'すべて'}, ...db.tags.map(t=>({id:t,name:t}))];
-  document.getElementById('tag-filter-row').innerHTML = pills.map(p=>`
-    <div class="tag-pill ${activeTag===p.id?'active':''}"
-      onclick="setActiveTag(${p.id===null?'null':'"'+esc(p.id)+'"'})">${esc(p.name)}</div>
-  `).join('');
+  const el = document.getElementById('tag-filter-row');
+  if(tagEditMode){
+    // 編集モード：削除ボタン付き＋新規追加入力
+    let html = db.tags.map(t=>`
+      <div class="tag-pill-wrap">
+        <div class="tag-pill active" style="display:flex;align-items:center;gap:4px;padding-right:6px">
+          ${esc(t)}
+          <button class="tag-pill-del" onclick="event.stopPropagation();deleteTagFromBar('${esc(t)}')">✕</button>
+        </div>
+      </div>`).join('');
+    el.innerHTML = html || '<span style="font-size:12px;color:var(--muted)">グループなし</span>';
+  } else {
+    const pills = [{id:null,name:'すべて'}, ...db.tags.map(t=>({id:t,name:t}))];
+    el.innerHTML = pills.map(p=>`
+      <div class="tag-pill ${activeTag===p.id?'active':''}"
+        onclick="setActiveTag(${p.id===null?'null':'"'+esc(p.id)+'"'})">${esc(p.name)}</div>
+    `).join('');
+  }
+}
+
+function deleteTagFromBar(t){
+  if(!confirm(`グループ「${t}」を削除しますか？
+所属メンバーからも外れます。`)) return;
+  db.tags = db.tags.filter(x=>x!==t);
+  db.members.forEach(m=>{ m.tags=(m.tags||[]).filter(x=>x!==t); });
+  if(activeTag===t) activeTag=null;
+  save();
+  renderTagFilter();
+  renderMemberView();
 }
 
 function setActiveTag(t){ activeTag=t; renderHome(); }
