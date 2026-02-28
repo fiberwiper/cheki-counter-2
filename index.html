@@ -894,40 +894,31 @@ function renderMemberView(){
     return;
   }
 
-  const isPastMonth = currentYM < todayYM();
-  if(isPastMonth){
-    // 過去月：0枚は折りたたむ
-    const active = list.filter(m => memberTotal(m, currentYM) > 0);
-    const zero = list.filter(m => memberTotal(m, currentYM) === 0);
-    const showingZero = document.getElementById('show-zero-members');
-    const zeroExpanded = showingZero ? showingZero.dataset.expanded === '1' : false;
+  // 当月・過去月問わず0枚は折りたたむ
+  const active = list.filter(m => memberTotal(m, currentYM) > 0);
+  const zero = list.filter(m => memberTotal(m, currentYM) === 0);
+  const showingZero = document.getElementById('show-zero-members');
+  const zeroExpanded = showingZero ? showingZero.dataset.expanded === '1' : false;
+  const showList = zeroExpanded ? [...active, ...zero] : active;
 
-    let html = '';
-    const activeList = active;
-    const showList = zeroExpanded ? [...active, ...zero] : active;
-
-    if(viewMode==='tile'){
-      html += `<div class="tile-grid">${showList.map(tileCard).join('')}</div>`;
-    } else {
-      html += showList.map(listCard).join('');
-    }
-
-    if(zero.length > 0){
-      if(zeroExpanded){
-        html += `<div id="show-zero-members" data-expanded="1" class="zero-toggle" onclick="toggleZeroMembers()">▲ 0枚の推しを隠す（${zero.length}人）</div>`;
-      } else {
-        html += `<div id="show-zero-members" data-expanded="0" class="zero-toggle" onclick="toggleZeroMembers()">▼ 0枚の推しを表示（${zero.length}人）</div>`;
-      }
-    }
-    el.innerHTML = html;
+  let html = '';
+  if(showList.length === 0 && zero.length === 0){
+    el.innerHTML=`<div class="empty"><em>🌸</em>${activeTag?'このグループに推しはいません':'＋ボタンで推しを追加しよう'}</div>`;
+    return;
+  }
+  if(viewMode==='tile'){
+    html += showList.length > 0 ? `<div class="tile-grid">${showList.map(tileCard).join('')}</div>` : '';
   } else {
-    // 当月：全員表示
-    if(viewMode==='tile'){
-      el.innerHTML=`<div class="tile-grid">${list.map(tileCard).join('')}</div>`;
+    html += showList.map(listCard).join('');
+  }
+  if(zero.length > 0){
+    if(zeroExpanded){
+      html += `<div id="show-zero-members" data-expanded="1" class="zero-toggle" onclick="toggleZeroMembers()">▲ 0枚の推しを隠す（${zero.length}人）</div>`;
     } else {
-      el.innerHTML=list.map(listCard).join('');
+      html += `<div id="show-zero-members" data-expanded="0" class="zero-toggle" onclick="toggleZeroMembers()">▼ 0枚の推しを表示（${zero.length}人）</div>`;
     }
   }
+  el.innerHTML = html;
 }
 
 function toggleZeroMembers(){
