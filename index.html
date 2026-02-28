@@ -1252,12 +1252,29 @@ function renderEditTags(){
     return;
   }
   el.innerHTML = db.tags.map(t=>`
-    <div class="tag-check ${editSelectedTags.has(t)?'on':''}" onclick="toggleEditTag('${t}')">${t}</div>
+    <div class="tag-check-wrap">
+      <div class="tag-check ${editSelectedTags.has(t)?'on':''}" onclick="toggleEditTag('${esc(t)}')">${esc(t)}</div>
+      <button class="tag-del-btn" onclick="deleteTag('${esc(t)}')">✕</button>
+    </div>
   `).join('');
 }
 
 function toggleEditTag(t){
-  editSelectedTags.has(t)?editSelectedTags.delete(t):editSelectedTags.add(t);
+  if(editSelectedTags.has(t)){
+    editSelectedTags.clear();
+  } else {
+    editSelectedTags.clear();
+    editSelectedTags.add(t);
+  }
+  renderEditTags();
+}
+
+function deleteTag(t){
+  if(!confirm(`グループ「${t}」を削除しますか？\n所属メンバーからも外れます。`)) return;
+  db.tags = db.tags.filter(x=>x!==t);
+  db.members.forEach(m=>{ m.tags=(m.tags||[]).filter(x=>x!==t); });
+  editSelectedTags.delete(t);
+  save();
   renderEditTags();
 }
 
