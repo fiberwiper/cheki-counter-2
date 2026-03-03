@@ -34,7 +34,6 @@ html,body{overflow-x:hidden}
 body{
   background:var(--bg);color:var(--text);
   font-family:'Noto Sans JP',sans-serif;
-  background-image: radial-gradient(circle at 20% 0%, #ffe0ee 0%, transparent 50%), radial-gradient(circle at 80% 100%, #e8f0ff 0%, transparent 50%);
   min-height:100vh;max-width:520px;margin:0 auto;
   width:100%;position:relative;
 }
@@ -60,7 +59,7 @@ body{
 /* HEADER */
 .hdr{
   position:sticky;top:0;z-index:30;
-  background:rgba(255,245,248,.95);
+  background:var(--bg);opacity:0.97;
   backdrop-filter:blur(12px);
   border-bottom:1.5px solid var(--border);
   padding:13px 12px;
@@ -83,16 +82,16 @@ body{
   background:var(--s1);border:1.5px solid var(--border);
   color:var(--muted);font-size:15px;cursor:pointer;
   display:flex;align-items:center;justify-content:center;
-  box-shadow:0 2px 6px rgba(255,61,127,.08);
+  box-shadow:0 2px 6px rgba(0,0,0,0.03);
 }
 .icon-btn:active{opacity:.6}
-.icon-btn.active{background:var(--pink);border-color:var(--pink);color:#fff;box-shadow:0 2px 10px rgba(255,61,127,.3)}
+.icon-btn.active{background:var(--pink);border-color:var(--pink);color:#fff;box-shadow:0 2px 10px rgba(0,0,0,0.12)}
 .primary-btn{
   background:var(--pink);border:none;color:#fff;
   padding:8px 16px;border-radius:20px;
   font-size:13px;font-weight:700;cursor:pointer;
   font-family:'Noto Sans JP',sans-serif;white-space:nowrap;
-  box-shadow:0 3px 10px rgba(255,61,127,.3);
+  box-shadow:0 3px 10px rgba(0,0,0,0.12);
 }
 .primary-btn:active{opacity:.7}
 
@@ -115,7 +114,7 @@ body{
   margin-bottom:14px;
   padding:10px 16px;
   background:var(--pink);border-radius:20px;
-  box-shadow:0 4px 16px rgba(255,61,127,.25);
+  box-shadow:0 4px 16px rgba(0,0,0,0.10);
 }
 .sum-card{
   display:flex;align-items:center;gap:6px;
@@ -138,9 +137,9 @@ body{
   border:1.5px solid var(--border);background:var(--s1);
   color:var(--sub);font-size:12px;font-weight:700;cursor:pointer;
   white-space:nowrap;transition:all .15s;
-  box-shadow:0 2px 6px rgba(255,61,127,.06);
+  box-shadow:0 2px 6px rgba(0,0,0,0.02);
 }
-.tag-pill.active{background:var(--pink);border-color:var(--pink);color:#fff;box-shadow:0 3px 10px rgba(255,61,127,.3)}
+.tag-pill.active{background:var(--pink);border-color:var(--pink);color:#fff;box-shadow:0 3px 10px rgba(0,0,0,0.12)}
 .tag-edit-btn{
   flex-shrink:0;padding:6px 12px;border-radius:20px;
   border:1.5px solid var(--border);background:var(--s1);
@@ -171,7 +170,7 @@ body{
   display:flex;flex-direction:column;align-items:center;
   justify-content:space-between;
   position:relative;overflow:hidden;text-align:center;
-  min-width:0;box-shadow:0 2px 10px rgba(255,61,127,.07);
+  min-width:0;box-shadow:0 2px 10px rgba(0,0,0,0.03);
   min-height:130px;
 }
 .tile-card::before{
@@ -181,7 +180,7 @@ body{
 }
 .tile-card:hover::before,.tile-card:active::before{opacity:1}
 .tile-card:active{transform:scale(.95)}
-.tile-card:hover{border-color:var(--pink);box-shadow:0 4px 16px rgba(255,61,127,.2)}
+.tile-card:hover{border-color:var(--pink);box-shadow:0 4px 16px rgba(0,0,0,0.08)}
 /* tile-avatar removed */
 .tile-name{font-size:10px;font-weight:900;line-height:1.3;word-break:break-all;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);font-weight:900}
 .tile-tags{display:flex;flex-wrap:wrap;gap:3px;justify-content:center;min-height:20px;align-content:flex-start}
@@ -195,7 +194,7 @@ body{
   display:flex;align-items:center;justify-content:center;
 }
 .tile-minus{background:var(--s2);color:var(--muted);border:1.5px solid var(--border)}
-.tile-plus{background:var(--pink);color:#fff;box-shadow:0 2px 8px rgba(255,61,127,.35)}
+.tile-plus{background:var(--pink);color:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.14)}
 .tile-minus:active,.tile-plus:active{opacity:.6;transform:scale(.9)}
 
 /* LIST */
@@ -203,10 +202,10 @@ body{
   background:var(--s1);border:1.5px solid var(--border);
   border-radius:14px;padding:10px 12px;margin-bottom:6px;
   cursor:pointer;display:flex;align-items:center;gap:10px;
-  transition:all .15s;box-shadow:0 2px 8px rgba(255,61,127,.05);
+  transition:all .15s;box-shadow:0 2px 8px rgba(0,0,0,0.02);
 }
 .list-card:active{opacity:.8;transform:scale(.99)}
-.list-card:hover{border-color:var(--pink);box-shadow:0 3px 12px rgba(255,61,127,.15)}
+.list-card:hover{border-color:var(--pink);box-shadow:0 3px 12px rgba(0,0,0,0.06)}
 .list-avatar{display:none}
 .list-info{flex:1;min-width:0;display:flex;align-items:center;gap:8px}
 .list-name{font-size:14px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
@@ -224,23 +223,23 @@ body{
   transition:transform .1s;
 }
 .list-minus{background:var(--s2);color:var(--muted);border:1.5px solid var(--border)}
-.list-plus{background:var(--pink);color:#fff;box-shadow:0 2px 8px rgba(255,61,127,.3)}
+.list-plus{background:var(--pink);color:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.12)}
 .list-minus:active,.list-plus:active{opacity:.6;transform:scale(.88)}
 
 /* DETAIL */
 .big-ctr{
-  background:linear-gradient(135deg,#fff0f6 0%,#fff8e8 100%);
+  background:var(--s2);
   border:1.5px solid var(--border);
   border-radius:24px;padding:24px 14px;
   display:flex;flex-direction:column;align-items:center;
   gap:14px;margin-bottom:14px;
   width:100%;box-sizing:border-box;
-  box-shadow:0 4px 20px rgba(255,61,127,.1);
+  box-shadow:0 4px 20px rgba(0,0,0,0.04);
 }
 .big-num{
   font-family:'DotGothic16',monospace;
   font-size:80px;font-weight:400;color:var(--pink);line-height:1;
-  text-shadow:0 4px 16px rgba(255,61,127,.2);
+  text-shadow:0 4px 16px rgba(0,0,0,0.06);
 }
 .big-num.bump{animation:bigbump .2s ease}
 @keyframes bigbump{
@@ -257,10 +256,10 @@ body{
 }
 .c-btn:active{transform:scale(.85)}
 .c-minus{background:var(--s2);color:var(--muted);border:2px solid var(--border)}
-.c-plus{background:var(--pink);color:#fff;box-shadow:0 6px 20px rgba(255,61,127,.4)}
+.c-plus{background:var(--pink);color:#fff;box-shadow:0 6px 20px rgba(0,0,0,0.16)}
 
 .cost-grid{
-  background:linear-gradient(135deg,#fff8e8,#fff0f6);
+  background:var(--s2);
   border:1.5px solid var(--border);
   border-radius:var(--r);padding:12px 14px;
   display:grid;grid-template-columns:1fr 1fr;gap:10px;
@@ -298,7 +297,7 @@ body{
 .shot-card{
   background:var(--s1);border:1.5px solid var(--border);
   border-radius:16px;padding:12px 10px;text-align:center;
-  box-shadow:0 2px 8px rgba(255,61,127,.06);
+  box-shadow:0 2px 8px rgba(0,0,0,0.02);
 }
 .shot-name{font-size:11px;color:var(--sub);font-weight:700;margin-bottom:8px}
 .shot-count{font-family:'DotGothic16',monospace;font-size:26px;font-weight:400;margin-bottom:8px;color:var(--pink)}
@@ -316,14 +315,14 @@ body{
 }
 .s-btn:active{transform:scale(.82)}
 .s-minus{background:var(--s2);color:var(--muted);border:1.5px solid var(--border)}
-.s-plus{background:var(--pink);color:#fff;box-shadow:0 2px 8px rgba(255,61,127,.3)}
+.s-plus{background:var(--pink);color:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.12)}
 
 .ev-add-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .ghost-btn{
   background:var(--pink);border:none;color:#fff;
   padding:6px 14px;border-radius:20px;font-size:12px;cursor:pointer;
   font-family:'Noto Sans JP',sans-serif;font-weight:700;
-  box-shadow:0 2px 8px rgba(255,61,127,.3);
+  box-shadow:0 2px 8px rgba(0,0,0,0.12);
 }
 .ghost-btn:active{opacity:.6}
 
@@ -332,7 +331,7 @@ body{
   background:var(--s1);border:1.5px solid var(--border);
   border-radius:14px;padding:12px 14px;
   display:flex;align-items:center;gap:10px;
-  box-shadow:0 2px 8px rgba(255,61,127,.06);
+  box-shadow:0 2px 8px rgba(0,0,0,0.02);
 }
 .ev-bar{width:3px;min-height:36px;border-radius:2px;background:linear-gradient(180deg,var(--pink),var(--coral));flex-shrink:0;align-self:stretch}
 .ev-info{flex:1;min-width:0}
@@ -348,7 +347,7 @@ body{
 .memo-box{
   background:var(--s1);border:1.5px solid var(--border);
   border-radius:var(--r);padding:14px;margin-bottom:14px;
-  box-shadow:0 2px 8px rgba(255,61,127,.05);
+  box-shadow:0 2px 8px rgba(0,0,0,0.02);
 }
 .memo-box textarea{
   width:100%;background:none;border:none;
@@ -382,10 +381,10 @@ body{
 .fab{
   position:fixed;bottom:24px;right:20px;
   width:58px;height:58px;border-radius:50%;
-  background:linear-gradient(135deg,var(--pink),var(--coral));
+  background:var(--pink);
   border:none;color:#fff;
   font-size:26px;cursor:pointer;z-index:50;
-  box-shadow:0 6px 24px rgba(255,61,127,.45);
+  box-shadow:0 6px 24px rgba(0,0,0,0.18);
   display:flex;align-items:center;justify-content:center;
   transition:transform .15s;
 }
@@ -411,13 +410,13 @@ body{
   font-family:'Noto Sans JP',sans-serif;outline:none;-webkit-appearance:none;
   box-sizing:border-box;
 }
-.ff input:focus,.ff textarea:focus{border-color:var(--pink);box-shadow:0 0 0 3px rgba(255,61,127,.12)}
+.ff input:focus,.ff textarea:focus{border-color:var(--pink);box-shadow:0 0 0 3px rgba(0,0,0,0.05)}
 .ff textarea{resize:none;line-height:1.7;min-height:60px}
 .ff-row{display:flex;gap:10px}
 .ff-row .ff{flex:1}
 .m-acts{display:flex;gap:10px;margin-top:18px;width:100%;box-sizing:border-box;}
 .btn-cancel{flex:1;background:var(--s2);border:1.5px solid var(--border);border-radius:20px;padding:14px;color:var(--sub);font-size:15px;cursor:pointer;font-family:'Noto Sans JP',sans-serif}
-.btn-ok{flex:2;background:linear-gradient(135deg,var(--pink),var(--coral));border:none;border-radius:20px;padding:14px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;box-shadow:0 4px 14px rgba(255,61,127,.35)}
+.btn-ok{flex:2;background:linear-gradient(135deg,var(--pink),var(--coral));border:none;border-radius:20px;padding:14px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;box-shadow:0 4px 14px rgba(0,0,0,0.14)}
 .btn-cancel:active,.btn-ok:active{opacity:.7}
 
 .tag-checks{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
@@ -442,7 +441,7 @@ body{
   font-size:16px;font-family:'Noto Sans JP',sans-serif;outline:none;
   box-sizing:border-box;
 }
-.inline-add input:focus{border-color:var(--pink);box-shadow:0 0 0 3px rgba(255,61,127,.12)}
+.inline-add input:focus{border-color:var(--pink);box-shadow:0 0 0 3px rgba(0,0,0,0.05)}
 .inline-add-hint{font-size:11px;color:var(--muted);margin-top:5px}
 .venue-hint{font-size:11px;color:var(--muted);margin-top:4px}
 .pwa-banner{
@@ -460,7 +459,7 @@ body{
   margin-bottom:12px;
   background:var(--s1);border:1.5px solid var(--border);
   border-radius:20px;padding:6px 12px;
-  box-shadow:0 2px 8px rgba(255,61,127,.06);
+  box-shadow:0 2px 8px rgba(0,0,0,0.02);
 }
 .month-nav-btn{
   background:none;border:none;color:var(--pink);
@@ -468,6 +467,27 @@ body{
   font-weight:700;
 }
 .month-nav-btn:disabled{color:var(--border);cursor:default}
+.theme-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;
+}
+.theme-btn{
+  padding:12px;border-radius:14px;border:2px solid var(--border);
+  background:var(--s1);color:var(--text);font-size:14px;font-weight:700;
+  cursor:pointer;font-family:'Noto Sans JP',sans-serif;
+  transition:all .15s;
+}
+.theme-btn.active{border-color:var(--pink);background:var(--pink-soft);color:var(--pink)}
+.theme-btn:active{opacity:.7}
+.color-picker{
+  display:flex;flex-wrap:wrap;gap:6px;
+}
+.color-swatch{
+  width:52px;height:36px;border-radius:10px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .1s;
+}
+.color-swatch:active{transform:scale(.9)}
+.color-swatch.selected{transform:scale(1.08)}
 .zero-toggle{
   text-align:center;font-size:12px;color:var(--muted);
   padding:10px;cursor:pointer;
@@ -482,20 +502,20 @@ body{
 .month-card{
   background:var(--s1);border:1.5px solid var(--border);
   border-radius:18px;padding:16px;margin-bottom:12px;
-  box-shadow:0 2px 10px rgba(255,61,127,.07);
+  box-shadow:0 2px 10px rgba(0,0,0,0.03);
 }
 .year-summary{
   background:var(--pink);border-radius:20px;
   padding:14px 16px;margin-bottom:16px;
   display:flex;align-items:center;justify-content:space-between;
-  box-shadow:0 4px 16px rgba(255,61,127,.25);
+  box-shadow:0 4px 16px rgba(0,0,0,0.10);
 }
 .year-summary-label{font-size:13px;color:rgba(255,255,255,.9);font-weight:700}
 .year-summary-val{font-family:'DotGothic16',monospace;font-size:26px;color:#fff}
 .year-month-card{
   background:var(--s1);border:1.5px solid var(--border);
   border-radius:16px;padding:14px;margin-bottom:10px;
-  box-shadow:0 2px 8px rgba(255,61,127,.05);
+  box-shadow:0 2px 8px rgba(0,0,0,0.02);
   cursor:pointer;transition:all .15s;
 }
 .year-month-card:hover{border-color:var(--pink)}
@@ -508,7 +528,7 @@ body{
 .year-member-bar{display:flex;align-items:center;gap:8px;margin-bottom:5px}
 .year-member-bar-name{font-size:12px;font-weight:700;color:var(--text);width:80px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .year-member-bar-track{flex:1;background:var(--s2);border-radius:4px;height:8px;overflow:hidden}
-.year-member-bar-fill{height:100%;background:linear-gradient(90deg,var(--pink),var(--coral));border-radius:4px;transition:width .3s}
+.year-member-bar-fill{height:100%;background:var(--pink);border-radius:4px;transition:width .3s}
 .year-member-bar-count{font-family:'DotGothic16',monospace;font-size:12px;color:var(--pink);width:30px;text-align:right;flex-shrink:0}
 .month-card-header{
   display:flex;align-items:center;justify-content:space-between;
@@ -535,7 +555,7 @@ body{
   background:var(--s1);border:1.5px solid var(--border);
   border-radius:20px;padding:6px 16px;
   display:inline-block;margin:0 auto 14px;
-  box-shadow:0 2px 8px rgba(255,61,127,.06);
+  box-shadow:0 2px 8px rgba(0,0,0,0.02);
 }
 .last-updated-wrap{text-align:center;margin-bottom:6px}
 .sync-area{
@@ -588,6 +608,7 @@ body{
       <button class="icon-btn" id="btn-list" onclick="setView('list')" title="リスト">☰</button>
       <button class="icon-btn" id="btn-sort" onclick="toggleSort()" title="枚数順">↓</button>
       <button class="icon-btn" onclick="showYearView()" title="年間記録">🏆</button>
+      <button class="icon-btn" onclick="openThemeModal()" title="テーマ">🎨</button>
       <button class="icon-btn" onclick="openSettingsModal()" title="設定">⚙</button>
     </div>
   </div>
@@ -687,12 +708,15 @@ body{
       <input type="text" id="in-m-name" placeholder="例：○○ちゃん" maxlength="20">
     </div>
     <div class="ff">
-      <label>グループ（タグ）— 複数選択可</label>
+      <label>グループ（タグ）</label>
       <div class="tag-checks" id="modal-tag-checks"></div>
       <div class="inline-add">
         <input type="text" id="in-new-tag" placeholder="新しいグループ名（Enterで追加）" maxlength="20">
-        <div class="inline-add-hint">Enterで追加。「追加」ボタンを押すと推しも同時に登録されます。</div>
       </div>
+    </div>
+    <div class="ff">
+      <label>担当カラー</label>
+      <div class="color-picker" id="add-color-picker"></div>
     </div>
     <div class="m-acts">
       <button class="btn-cancel" onclick="closeModal('modal-member')">キャンセル</button>
@@ -755,6 +779,7 @@ function todayYM(){
 }
 let currentYM = todayYM();
 let tagEditMode = false;
+let newlyAddedId = null; // 追加直後の推しID（折りたたみ除外）
 function ymLabel(ym){ 
   const [y,m] = ym.split('-'); 
   return y+'年'+parseInt(m)+'月'; 
@@ -877,6 +902,10 @@ function moveMonth(dir){
   currentYM = dir < 0 ? prevYM(currentYM) : nextYM(currentYM);
   sortByCount = false;
   displayOrder = [];
+  newlyAddedId = null;
+  // 折りたたみ状態をリセット
+  const zeroEl = document.getElementById('show-zero-members');
+  if(zeroEl) zeroEl.dataset.expanded = '0';
   renderHome();
 }
 
@@ -1035,11 +1064,16 @@ function renderMemberView(){
   }
 
   // 当月・過去月問わず0枚は折りたたむ
+  // newlyAddedIdは「表示エリア」に出す（0枚でも表示）
   const active = list.filter(m => memberTotal(m, currentYM) > 0);
-  const zero = list.filter(m => memberTotal(m, currentYM) === 0);
+  const newlyAdded = newlyAddedId ? list.filter(m => m.id === newlyAddedId && memberTotal(m, currentYM) === 0) : [];
+  const zero = list.filter(m => memberTotal(m, currentYM) === 0 && m.id !== newlyAddedId);
+
   const showingZero = document.getElementById('show-zero-members');
   const zeroExpanded = showingZero ? showingZero.dataset.expanded === '1' : false;
-  const showList = zeroExpanded ? [...active, ...zero] : active;
+
+  // 表示リスト：枚数あり ＋ 新規追加 ＋ (展開中なら0枚も)
+  const showList = [...active, ...newlyAdded, ...(zeroExpanded ? zero : [])];
 
   let html = '';
   if(showList.length === 0 && zero.length === 0){
@@ -1051,11 +1085,13 @@ function renderMemberView(){
   } else {
     html += showList.map(listCard).join('');
   }
-  if(zero.length > 0){
-    if(zeroExpanded){
-      html += `<div id="show-zero-members" data-expanded="1" class="zero-toggle" onclick="toggleZeroMembers()">▲ 0枚の推しを隠す（${zero.length}人）</div>`;
+  // 折りたたみボタン：zeroがいるか新規追加がいるとき
+  const hideableCount = zero.length + newlyAdded.length;
+  if(hideableCount > 0){
+    if(zeroExpanded || newlyAdded.length > 0){
+      html += `<div id="show-zero-members" data-expanded="1" class="zero-toggle" onclick="toggleZeroMembers()">▲ 0枚の推しを隠す（${hideableCount}人）</div>`;
     } else {
-      html += `<div id="show-zero-members" data-expanded="0" class="zero-toggle" onclick="toggleZeroMembers()">▼ 0枚の推しを表示（${zero.length}人）</div>`;
+      html += `<div id="show-zero-members" data-expanded="0" class="zero-toggle" onclick="toggleZeroMembers()">▼ 0枚の推しを表示（${hideableCount}人）</div>`;
     }
   }
   el.innerHTML = html;
@@ -1064,23 +1100,29 @@ function renderMemberView(){
 function toggleZeroMembers(){
   const el = document.getElementById('show-zero-members');
   if(!el) return;
-  el.dataset.expanded = el.dataset.expanded === '1' ? '0' : '1';
+  const closing = el.dataset.expanded === '1';
+  if(closing){
+    newlyAddedId = null; // 新規追加フラグをリセット
+  }
+  el.dataset.expanded = closing ? '0' : '1';
   renderMemberView();
-  // スクロール位置を維持
 }
 
 function tileCard(m){
-  const cnt=memberTotal(m);
+  const cnt=memberTotal(m,currentYM);
   const s=db.settings||{};
   const cost=cnt*(m.price||0);
-  return `<div class="tile-card" onclick="showDetail('${m.id}')">
+  const mc=getMemberColor(m);
+  const isMono = (m.color||'mono')==='mono';
+  return `<div class="tile-card" onclick="showDetail('${m.id}')"
+    style="border-color:${mc.accent};border-width:${isMono?'1.5px':'2px'}">
     <div class="tile-name">${esc(m.name)}</div>
-    <div class="tile-tags">${(m.tags||[]).map(t=>`<span class="tile-tag">${esc(t)}</span>`).join('')}</div>
+    <div class="tile-tags">${(m.tags||[]).map(t=>`<span class="tile-tag" style="${isMono?'':'background:'+mc.accent+';color:#fff;border-color:'+mc.accent}">${esc(t)}</span>`).join('')}</div>
     <div class="tile-count">${cnt}</div>
     ${s.costMode && cost>0 ? `<div class="tile-cost">¥${cost.toLocaleString()}</div>` : ''}
     <div class="tile-ctr-btns" onclick="event.stopPropagation()">
-      <button class="tile-minus" onclick="tileChange('${m.id}',-1)">−</button>
-      <button class="tile-plus" onclick="tileChange('${m.id}',1)">＋</button>
+      <button class="tile-minus" onclick="tileChange('${m.id}',-1)" style="border-color:${mc.border};color:${mc.accent}">−</button>
+      <button class="tile-plus" onclick="tileChange('${m.id}',1)" style="background:${mc.accent}">＋</button>
     </div>
   </div>`;
 }
@@ -1110,6 +1152,7 @@ function openAddMemberModal(){
   document.getElementById('in-new-tag').value='';
   selectedNewTags=new Set();
   renderModalTags();
+  renderColorPicker('mono', 'add-color-picker');
   openModal('modal-member');
   setTimeout(()=>document.getElementById('in-m-name').focus(),120);
 }
@@ -1155,9 +1198,13 @@ function submitMember(){
   const name=document.getElementById('in-m-name').value.trim();
   if(!name) return;
   maybeAddTagFromInput();
+  const addColorEl = document.querySelector('#add-color-picker .color-swatch.selected');
+  const addColor = addColorEl ? addColorEl.dataset.color : 'mono';
+  const newId = uid();
+  newlyAddedId = newId;
   db.members.push({
-    id:uid(), name, tags:[...selectedNewTags],
-    count:0, price:0, shotMode:true, shots:{}, costMode:false, events:[], memo:''
+    id:newId, name, tags:[...selectedNewTags],
+    count:0, price:0, shotMode:true, shots:{}, costMode:false, events:[], memo:'', color: addColor
   });
   save();
   closeModal('modal-member');
@@ -1379,6 +1426,7 @@ function openEditModal(){
   const m = getMember(currentMemberId);
   document.getElementById('in-edit-name').value = m.name;
   document.getElementById('in-edit-new-tag').value = '';
+  renderColorPicker(m.color||'mono', 'edit-color-picker');
   editSelectedTags = new Set(m.tags||[]);
   renderEditTags();
   openModal('modal-edit');
@@ -1418,6 +1466,30 @@ function deleteTag(t){
   renderEditTags();
 }
 
+function renderColorPicker(current, pickerId){
+  pickerId = pickerId || 'edit-color-picker';
+  const el = document.getElementById(pickerId);
+  if(!el) return;
+  el.innerHTML = Object.entries(MEMBER_COLORS).map(([k,c])=>`
+    <div class="color-swatch ${current===k?'selected':''}" data-color="${k}" data-picker="${pickerId}"
+      style="background:${c.bg};border:2px solid ${current===k?c.accent:c.border}"
+      onclick="selectColor('${k}','${pickerId}')">
+      <span style="color:${c.text};font-size:9px;font-weight:700">${c.label}</span>
+    </div>`).join('');
+}
+
+function selectColor(k, pickerId){
+  pickerId = pickerId || 'edit-color-picker';
+  const container = document.getElementById(pickerId);
+  if(!container) return;
+  container.querySelectorAll('.color-swatch').forEach(el=>{
+    const isSelected = el.dataset.color===k;
+    const c = MEMBER_COLORS[el.dataset.color];
+    el.classList.toggle('selected', isSelected);
+    el.style.border = `2px solid ${isSelected?c.accent:c.border}`;
+  });
+}
+
 function addEditTag(){
   const v = document.getElementById('in-edit-new-tag').value.trim();
   if(!v||db.tags.includes(v)) return;
@@ -1452,6 +1524,8 @@ function submitEdit(){
   const m = getMember(currentMemberId);
   m.name = name;
   m.tags = [...editSelectedTags];
+  const selectedColor = document.querySelector('#edit-color-picker .color-swatch.selected');
+  if(selectedColor) m.color = selectedColor.dataset.color;
   save();
   closeModal('modal-edit');
   renderDetail();
@@ -1643,11 +1717,40 @@ function renderYearView(){
     </div>
   </div>`;
   
+  // グループ別年間ランキング
+  const groupTotals = db.tags.map(tag => ({
+    name: tag,
+    total: months.reduce((s, mo) => {
+      return s + db.members
+        .filter(m => (m.tags||[]).includes(tag))
+        .reduce((ms, m) => ms + memberTotal(m, mo.ym), 0);
+    }, 0)
+  })).filter(x => x.total > 0).sort((a,b) => b.total - a.total);
+
+  const maxGroup = Math.max(...groupTotals.map(x=>x.total), 1);
+
+  if(groupTotals.length > 0){
+    const medals = ['🥇','🥈','🥉'];
+    html += `<div class="month-card" style="margin-bottom:16px">
+      <div class="month-card-header"><div class="month-card-title">🏆 グループ別年間ランキング</div></div>
+      ${groupTotals.map((g,i)=>`
+        <div class="year-member-bar" style="margin-bottom:8px">
+          <div class="year-member-bar-name" style="width:90px;font-size:13px">
+            ${medals[i]||`${i+1}位`} ${esc(g.name)}
+          </div>
+          <div class="year-member-bar-track">
+            <div class="year-member-bar-fill" style="width:${Math.round(g.total/maxGroup*100)}%"></div>
+          </div>
+          <div class="year-member-bar-count">${g.total}</div>
+        </div>`).join('')}
+    </div>`;
+  }
+
   // メンバー別年間ランキング
   if(memberTotals.length > 0){
     html += `<div class="month-card" style="margin-bottom:16px">
       <div class="month-card-header"><div class="month-card-title">推し別年間合計</div></div>
-      ${memberTotals.map(m=>`
+      ${memberTotals.map((m,i)=>`
         <div class="year-member-bar">
           <div class="year-member-bar-name">${esc(m.name)}</div>
           <div class="year-member-bar-track">
@@ -1658,31 +1761,9 @@ function renderYearView(){
     </div>`;
   }
   
-  // 月別カード
-  const monthCards = months.map(mo => {
-    const memberRows = db.members.map(m=>({
-      name:m.name, cnt: memberTotal(m, mo.ym)
-    })).filter(x=>x.cnt>0).sort((a,b)=>b.cnt-a.cnt);
-    const maxCnt = Math.max(...memberRows.map(x=>x.cnt), 1);
-    
-    return `<div class="year-month-card" onclick="goToMonth('${mo.ym}')">
-      <div class="year-month-header">
-        <div class="year-month-label">${mo.label}</div>
-        <div class="year-month-total">${mo.total}枚</div>
-      </div>
-      ${memberRows.map(m=>`
-        <div class="year-member-bar">
-          <div class="year-member-bar-name">${esc(m.name)}</div>
-          <div class="year-member-bar-track">
-            <div class="year-member-bar-fill" style="width:${Math.round(m.cnt/maxCnt*100)}%"></div>
-          </div>
-          <div class="year-member-bar-count">${m.cnt}</div>
-        </div>`).join('')}
-      ${mo.total===0?'<div style="font-size:12px;color:var(--muted)">記録なし</div>':''}
-    </div>`;
-  }).join('');
-  
-  html += monthCards || '<div class="empty"><em>📊</em>この年のデータがありません</div>';
+  if(yearTotal === 0){
+    html += '<div class="empty"><em>📊</em>この年のデータがありません</div>';
+  }
   el.innerHTML = html;
 }
 
@@ -1739,6 +1820,113 @@ function updateMonthMember(recordId, memberId, newVal){
   renderHistory();
 }
 
+
+// ═══ COLOR THEMES ═══
+const THEMES = {
+  pink: {
+    '--bg':'#fff5f8','--s1':'#ffffff','--s2':'#ffeef4','--s3':'#ffd6e7','--s4':'#ffbed8',
+    '--pink':'#ff3d7f','--pink-soft':'rgba(255,61,127,0.12)','--peach':'#ff85a8',
+    '--gold':'#ff9500','--mint':'#00c9a7','--sky':'#3b8bff','--coral':'#ff6b6b','--yellow':'#ffd93d',
+    '--text':'#1a0a1a','--sub':'#5a3a5a','--muted':'#7a5a70','--border':'#ffd0e4',
+    '--r':'18px','--r-sm':'12px'
+  },
+  red: {
+    '--bg':'#fff5f5','--s1':'#ffffff','--s2':'#ffeeee','--s3':'#ffd6d6','--s4':'#ffbebe',
+    '--pink':'#e53030','--pink-soft':'rgba(229,48,48,0.12)','--peach':'#ff7070',
+    '--gold':'#ff6600','--mint':'#00c9a7','--sky':'#3b8bff','--coral':'#ff4444','--yellow':'#ffd93d',
+    '--text':'#1a0808','--sub':'#5a2020','--muted':'#8a4a4a','--border':'#ffc8c8',
+    '--r':'18px','--r-sm':'12px'
+  },
+  blue: {
+    '--bg':'#f5f8ff','--s1':'#ffffff','--s2':'#eef2ff','--s3':'#d6e0ff','--s4':'#becdff',
+    '--pink':'#3b6fff','--pink-soft':'rgba(59,111,255,0.12)','--peach':'#7099ff',
+    '--gold':'#ff9500','--mint':'#00c9a7','--sky':'#0055ff','--coral':'#ff6b6b','--yellow':'#ffd93d',
+    '--text':'#080a1a','--sub':'#20305a','--muted':'#4a5a8a','--border':'#c8d4ff',
+    '--r':'18px','--r-sm':'12px'
+  },
+  yellow: {
+    '--bg':'#fffdf0','--s1':'#ffffff','--s2':'#fff9d6','--s3':'#fff0a0','--s4':'#ffe870',
+    '--pink':'#e6a800','--pink-soft':'rgba(230,168,0,0.12)','--peach':'#ffc940',
+    '--gold':'#ff6600','--mint':'#00c9a7','--sky':'#3b8bff','--coral':'#ff6b6b','--yellow':'#ffe000',
+    '--text':'#1a1500','--sub':'#5a4a00','--muted':'#8a7a30','--border':'#ffe090',
+    '--r':'18px','--r-sm':'12px'
+  },
+  orange: {
+    '--bg':'#fff8f0','--s1':'#ffffff','--s2':'#fff0e0','--s3':'#ffd6b0','--s4':'#ffbc80',
+    '--pink':'#ff6a00','--pink-soft':'rgba(255,106,0,0.12)','--peach':'#ff9040',
+    '--gold':'#ffcc00','--mint':'#00c9a7','--sky':'#3b8bff','--coral':'#ff4400','--yellow':'#ffd93d',
+    '--text':'#1a0800','--sub':'#5a2800','--muted':'#8a5a30','--border':'#ffd0a0',
+    '--r':'18px','--r-sm':'12px'
+  },
+  green: {
+    '--bg':'#f0fff5','--s1':'#ffffff','--s2':'#e0ffec','--s3':'#b0ffd0','--s4':'#80ffb0',
+    '--pink':'#00a846','--pink-soft':'rgba(0,168,70,0.12)','--peach':'#40c870',
+    '--gold':'#ff9500','--mint':'#00e090','--sky':'#3b8bff','--coral':'#ff6b6b','--yellow':'#ffd93d',
+    '--text':'#001a0a','--sub':'#005a20','--muted':'#308a50','--border':'#a0e8b8',
+    '--r':'18px','--r-sm':'12px'
+  },
+  purple: {
+    '--bg':'#f8f0ff','--s1':'#ffffff','--s2':'#f0e0ff','--s3':'#d8b0ff','--s4':'#c080ff',
+    '--pink':'#8b00ff','--pink-soft':'rgba(139,0,255,0.12)','--peach':'#b060ff',
+    '--gold':'#ff9500','--mint':'#00c9a7','--sky':'#3b8bff','--coral':'#ff6b6b','--yellow':'#ffd93d',
+    '--text':'#0a001a','--sub':'#30005a','--muted':'#6a308a','--border':'#d0a0ff',
+    '--r':'18px','--r-sm':'12px'
+  },
+  mono: {
+    '--bg':'#f5f5f5','--s1':'#ffffff','--s2':'#eeeeee','--s3':'#dddddd','--s4':'#cccccc',
+    '--pink':'#333333','--pink-soft':'rgba(51,51,51,0.12)','--peach':'#666666',
+    '--gold':'#888888','--mint':'#555555','--sky':'#444444','--coral':'#222222','--yellow':'#999999',
+    '--text':'#111111','--sub':'#444444','--muted':'#888888','--border':'#dddddd',
+    '--r':'18px','--r-sm':'12px'
+  }
+};
+
+const THEME_LABELS = {
+  pink:'🌸 ピンク', red:'❤️ 赤', orange:'🧡 オレンジ', yellow:'💛 黄色',
+  green:'💚 緑', blue:'💙 青', purple:'💜 紫', mono:'🖤 モノクロ'
+};
+
+function applyTheme(name){
+  const t = THEMES[name];
+  if(!t) return;
+  const root = document.documentElement.style;
+  Object.entries(t).forEach(([k,v]) => root.setProperty(k, v));
+  db.settings = db.settings||{};
+  db.settings.theme = name;
+  save();
+  // テーマ選択モーダルのボタンを更新
+  const btns = document.querySelectorAll('.theme-btn');
+  btns.forEach(b => b.classList.toggle('active', b.dataset.theme===name));
+}
+
+function openThemeModal(){
+  const current = (db.settings||{}).theme || 'pink';
+  document.getElementById('theme-grid').innerHTML = Object.entries(THEME_LABELS).map(([k,v])=>`
+    <button class="theme-btn ${current===k?'active':''}" data-theme="${k}" onclick="applyTheme('${k}')">${v}</button>
+  `).join('');
+  openModal('modal-theme');
+}
+
+
+// ═══ MEMBER COLORS ═══
+const MEMBER_COLORS = {
+  mono:   { label:'なし',         bg:'#f5f5f5', text:'#555555', border:'#d8d8d8', accent:'#999999' },
+  pink:   { label:'ピンク',       bg:'#fff0f5', text:'#c4456e', border:'#ffadd0', accent:'#ff6fa3' },
+  red:    { label:'赤',           bg:'#fff2f2', text:'#c44040', border:'#ffb3b3', accent:'#ff7070' },
+  orange: { label:'オレンジ',     bg:'#fff5ee', text:'#c46020', border:'#ffcaa0', accent:'#ff8c42' },
+  yellow: { label:'黄色',         bg:'#fffbea', text:'#a07820', border:'#ffe89a', accent:'#f5c430' },
+  green:  { label:'緑',           bg:'#f0fdf4', text:'#2e7d52', border:'#a8e6c0', accent:'#4caf78' },
+  mint:   { label:'ミントグリーン', bg:'#edfcf8', text:'#1e8a70', border:'#90e0cc', accent:'#38c9a8' },
+  sky:    { label:'水色',         bg:'#f0f8ff', text:'#2068b0', border:'#a0ccf0', accent:'#5aaae0' },
+  blue:   { label:'青',           bg:'#f2f4ff', text:'#3050c0', border:'#a8b8f8', accent:'#6080f0' },
+  purple: { label:'紫',           bg:'#f8f0ff', text:'#7040b0', border:'#cca8f0', accent:'#9060d8' },
+  white:  { label:'白',           bg:'#ffffff', text:'#666666', border:'#e0e0e0', accent:'#bbbbbb' },
+};
+
+function getMemberColor(m){
+  return MEMBER_COLORS[m.color||'mono'] || MEMBER_COLORS.mono;
+}
+
 // ═══ INIT ═══
 (async () => {
   await loadData();
@@ -1756,6 +1944,10 @@ function updateMonthMember(recordId, memberId, newVal){
     <div class="ff">
       <label>名前</label>
       <input type="text" id="in-edit-name" maxlength="20">
+    </div>
+    <div class="ff">
+      <label>担当カラー</label>
+      <div class="color-picker" id="edit-color-picker"></div>
     </div>
     <div class="ff">
       <label>グループ（タグ）</label>
@@ -1785,6 +1977,17 @@ function updateMonthMember(recordId, memberId, newVal){
     </div>
   </div>
   <div class="scroll" id="year-scroll"></div>
+</div>
+
+<!-- MODAL: Theme -->
+<div class="overlay" id="modal-theme">
+  <div class="modal">
+    <h2>カラーテーマ</h2>
+    <div class="theme-grid" id="theme-grid"></div>
+    <div class="m-acts" style="margin-top:20px">
+      <button class="btn-ok" onclick="closeModal('modal-theme')">閉じる</button>
+    </div>
+  </div>
 </div>
 
 <!-- MODAL: Settings -->
