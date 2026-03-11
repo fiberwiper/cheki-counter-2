@@ -632,6 +632,7 @@ body{
       <div class="month-nav-label" id="month-nav-label">2026年2月</div>
       <button class="month-nav-btn" onclick="moveMonth(1)" id="month-nav-next">▶</button>
     </div>
+    <div class="last-updated-wrap"><div class="last-updated" id="last-updated-label">更新：-</div></div>
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
       <div class="tag-row" id="tag-filter-row" style="margin-bottom:0;flex:1"></div>
       <button class="tag-edit-btn" id="tag-edit-toggle" onclick="toggleTagEditMode()">編集</button>
@@ -694,7 +695,7 @@ body{
       </div>
     </div>
     <div style="text-align:center;margin:30px 0 24px;opacity:0.35">
-      <button onclick="deleteMember()" style="background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">推しを削除する</button>
+      <button onclick="deleteMember()" style="background:none;border:1.5px solid #e53030;color:#e53030;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;border-radius:16px;padding:6px 16px;">推しを削除する</button>
     </div>
   </div>
 </div>
@@ -852,7 +853,9 @@ function memberTotal(m, ym){
   if(!db.monthData[ym]) return 0;
   const shots = db.monthData[ym][m.id+'_shots'] || {};
   const simple = db.monthData[ym][m.id] || 0;
-  const shotTotal = SHOT_TYPES.reduce((s,t)=>s+(shots[t]||0),0);
+  const photoMode = (db.settings||{}).photoMode;
+  const types = photoMode ? SHOT_TYPES : SHOT_TYPES.filter(t=>t!=='写メ');
+  const shotTotal = types.reduce((s,t)=>s+(shots[t]||0),0);
   return shotTotal > 0 ? shotTotal : simple;
 }
 function memberTotalShots(m, ym){
@@ -894,6 +897,17 @@ function renderHome(){
   document.getElementById('month-nav-label').textContent = ymLabel(currentYM);
   const nextBtn = document.getElementById('month-nav-next');
   if(nextBtn) nextBtn.disabled = currentYM >= todayYM();
+  // 最終更新日時
+  const luEl = document.getElementById('last-updated-label');
+  if(luEl && db.lastUpdated){
+    const d = new Date(db.lastUpdated);
+    const mm = d.getMonth()+1, dd = d.getDate();
+    const hh = String(d.getHours()).padStart(2,'0');
+    const min = String(d.getMinutes()).padStart(2,'0');
+    luEl.textContent = `最終更新 ${mm}/${dd} ${hh}:${min}`;
+  } else if(luEl){
+    luEl.textContent = '';
+  }
   renderTagFilter();
   renderMemberView();
 }
@@ -1581,6 +1595,7 @@ function doImport() {
 function openSettingsModal(){
   const s = db.settings;
   document.getElementById('st-shot').classList.toggle('on', !!s.shotMode);
+  document.getElementById('st-photo').classList.toggle('on', !!s.photoMode);
   document.getElementById('st-cost').classList.toggle('on', !!s.costMode);
   document.getElementById('st-event').classList.toggle('on', !!s.eventMode);
   document.getElementById('st-memo').classList.toggle('on', !!s.memoMode);
@@ -1591,7 +1606,7 @@ function toggleSetting(key){
   if(!db.settings) db.settings = {};
   db.settings[key] = !db.settings[key];
   document.getElementById({
-    shotMode:'st-shot', costMode:'st-cost',
+    shotMode:'st-shot', costMode:'st-cost', photoMode:'st-photo',
     eventMode:'st-event', memoMode:'st-memo'
   }[key]).classList.toggle('on', db.settings[key]);
   save();
@@ -1717,7 +1732,7 @@ function renderYearView(){
     </div>
   </div>`;
   
-  // グループ別年間ランキング
+  // グループ別年間ランキング（円グラフ）
   const groupTotals = db.tags.map(tag => ({
     name: tag,
     total: months.reduce((s, mo) => {
@@ -1727,22 +1742,47 @@ function renderYearView(){
     }, 0)
   })).filter(x => x.total > 0).sort((a,b) => b.total - a.total);
 
-  const maxGroup = Math.max(...groupTotals.map(x=>x.total), 1);
-
   if(groupTotals.length > 0){
-    const medals = ['🥇','🥈','🥉'];
+    const PIE_COLORS = ['#ff6fa3','#ff8c42','#f5c430','#4caf78','#6080f0','#9060d8','#38c9a8','#5aaae0'];
+    const top5 = groupTotals.slice(0, 5);
+    const othersTotal = groupTotals.slice(5).reduce((s,x)=>s+x.total, 0);
+    const pieData = othersTotal > 0 ? [...top5, {name:'その他', total: othersTotal}] : top5;
+    const pieTotal = pieData.reduce((s,x)=>s+x.total, 0);
+
+    // SVG円グラフ生成
+    let cumulative = 0;
+    const slices = pieData.map((g, i) => {
+      const pct = g.total / pieTotal;
+      const startAngle = cumulative * 2 * Math.PI - Math.PI/2;
+      const endAngle = (cumulative + pct) * 2 * Math.PI - Math.PI/2;
+      cumulative += pct;
+      const x1 = 80 + 70 * Math.cos(startAngle);
+      const y1 = 80 + 70 * Math.sin(startAngle);
+      const x2 = 80 + 70 * Math.cos(endAngle);
+      const y2 = 80 + 70 * Math.sin(endAngle);
+      const largeArc = pct > 0.5 ? 1 : 0;
+      const color = i < PIE_COLORS.length ? PIE_COLORS[i] : '#cccccc';
+      return `<path d="M80,80 L${x1},${y1} A70,70 0 ${largeArc},1 ${x2},${y2} Z" fill="${color}" stroke="#fff" stroke-width="2"/>`;
+    }).join('');
+
+    const medals = ['🥇','🥈','🥉','4位','5位'];
+    const legend = pieData.map((g,i) => {
+      const color = i < PIE_COLORS.length ? PIE_COLORS[i] : '#cccccc';
+      const pct = Math.round(g.total / pieTotal * 100);
+      return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <div style="width:12px;height:12px;border-radius:3px;background:${color};flex-shrink:0"></div>
+        <div style="flex:1;font-size:13px;font-weight:700;color:var(--text)">${i < 5 ? (medals[i]||'') : ''} ${esc(g.name)}</div>
+        <div style="font-size:12px;color:var(--muted)">${g.total}枚</div>
+        <div style="font-size:11px;color:var(--muted);width:32px;text-align:right">${pct}%</div>
+      </div>`;
+    }).join('');
+
     html += `<div class="month-card" style="margin-bottom:16px">
       <div class="month-card-header"><div class="month-card-title">🏆 グループ別年間ランキング</div></div>
-      ${groupTotals.map((g,i)=>`
-        <div class="year-member-bar" style="margin-bottom:8px">
-          <div class="year-member-bar-name" style="width:90px;font-size:13px">
-            ${medals[i]||`${i+1}位`} ${esc(g.name)}
-          </div>
-          <div class="year-member-bar-track">
-            <div class="year-member-bar-fill" style="width:${Math.round(g.total/maxGroup*100)}%"></div>
-          </div>
-          <div class="year-member-bar-count">${g.total}</div>
-        </div>`).join('')}
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <svg width="160" height="160" viewBox="0 0 160 160" style="flex-shrink:0">${slices}</svg>
+        <div style="flex:1;min-width:140px">${legend}</div>
+      </div>
     </div>`;
   }
 
@@ -2000,6 +2040,13 @@ function getMemberColor(m){
         <div class="setting-desc">サインあり・サインなし・写メで分類</div>
       </div>
       <button class="toggle-switch" id="st-shot" onclick="toggleSetting('shotMode')"></button>
+    </div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">写メをチェキに合算</div>
+        <div class="setting-desc">写メ枚数をチェキ枚数に含めてカウント</div>
+      </div>
+      <button class="toggle-switch" id="st-photo" onclick="toggleSetting('photoMode')"></button>
     </div>
     <div class="setting-row">
       <div>
