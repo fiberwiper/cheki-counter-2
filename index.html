@@ -1300,6 +1300,7 @@ function simpleChange(delta){
   const shots = db.monthData[currentYM][m.id+'_shots'] || {};
   shots['サインあり']=Math.max(0,(shots['サインあり']||0)+delta);
   db.monthData[currentYM][m.id+'_shots']=shots;
+  save();
   const total=SHOT_TYPES.reduce((s,t)=>s+(shots[t]||0),0);
   const el=document.getElementById('det-big-num');
   el.textContent=total;
@@ -1346,7 +1347,12 @@ function buildVenueDatalist(val){
 }
 function filterVenueList(v){ buildVenueDatalist(v); }
 
+let editingEventId = null;
+
 function openEventModal(){
+  editingEventId = null;
+  document.getElementById('ev-modal-title').textContent = 'ライブを記録';
+  document.getElementById('ev-submit-btn').textContent = '記録';
   document.getElementById('in-ev-name').value='';
   document.getElementById('in-ev-venue').value='';
   document.getElementById('in-ev-date').value=new Date().toISOString().slice(0,10);
@@ -1357,18 +1363,39 @@ function openEventModal(){
   setTimeout(()=>document.getElementById('in-ev-name').focus(),120);
 }
 
+function editEvent(eid){
+  const m=getMember(currentMemberId);
+  const ev=(m.events||[]).find(e=>e.id===eid);
+  if(!ev) return;
+  editingEventId = eid;
+  document.getElementById('ev-modal-title').textContent = 'ライブを編集';
+  document.getElementById('ev-submit-btn').textContent = '保存';
+  document.getElementById('in-ev-name').value=ev.name||'';
+  document.getElementById('in-ev-venue').value=ev.venue||'';
+  document.getElementById('in-ev-date').value=ev.date||new Date().toISOString().slice(0,10);
+  document.getElementById('in-ev-count').value=ev.count||'';
+  document.getElementById('in-ev-memo').value=ev.memo||'';
+  buildVenueDatalist('');
+  openModal('modal-event');
+  setTimeout(()=>document.getElementById('in-ev-name').focus(),120);
+}
+
 function submitEvent(){
   const name=document.getElementById('in-ev-name').value.trim();
   if(!name) return;
   const venue=document.getElementById('in-ev-venue').value.trim();
   const count=parseInt(document.getElementById('in-ev-count').value)||0;
+  const date=document.getElementById('in-ev-date').value;
+  const memo=document.getElementById('in-ev-memo').value.trim();
   const m=getMember(currentMemberId);
   if(!m.events) m.events=[];
-  m.events.push({
-    id:uid(), name, venue,
-    date:document.getElementById('in-ev-date').value,
-    count, memo:document.getElementById('in-ev-memo').value.trim()
-  });
+  if(editingEventId){
+    const ev=m.events.find(e=>e.id===editingEventId);
+    if(ev){ ev.name=name; ev.venue=venue; ev.date=date; ev.count=count; ev.memo=memo; }
+    editingEventId = null;
+  } else {
+    m.events.push({ id:uid(), name, venue, date, count, memo });
+  }
   if(venue&&!db.venues.includes(venue)) db.venues.push(venue);
   save();
   closeModal('modal-event');
