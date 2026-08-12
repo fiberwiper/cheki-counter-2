@@ -523,7 +523,8 @@ body{
 .year-month-label{font-family:'Kaisei Decol',serif;font-size:15px;font-weight:700;color:var(--text)}
 .year-month-total{font-family:'DotGothic16',monospace;font-size:18px;color:var(--pink)}
 .year-member-bar{display:flex;align-items:center;gap:8px;margin-bottom:5px}
-.year-member-bar-name{font-size:12px;font-weight:700;color:var(--text);width:112px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.year-member-bar-name{font-size:12px;font-weight:700;color:var(--text);width:146px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;line-height:1.25}
+.year-member-bar-former{display:block;font-size:10px;font-weight:400;color:var(--muted);line-height:1.2;overflow:hidden;text-overflow:ellipsis}
 .year-member-bar-track{flex:1;background:var(--s2);border-radius:4px;height:8px;overflow:hidden}
 .year-member-bar-fill{height:100%;background:var(--pink);border-radius:4px;transition:width .3s}
 .year-member-bar-count{font-family:'DotGothic16',monospace;font-size:12px;color:var(--pink);width:30px;text-align:right;flex-shrink:0}
@@ -2008,7 +2009,7 @@ function renderYearView(){
       <div class="month-card-header"><div class="month-card-title">推し別年間合計</div></div>
       ${memberTotals.map((m,i)=>`
         <div class="year-member-bar">
-          <div class="year-member-bar-name">${esc(m.name)}${m.former.length?`<span style="font-size:10px;color:var(--muted);font-weight:400">（元・${esc(m.former.join('・'))}）</span>`:''}</div>
+          <div class="year-member-bar-name">${esc(m.name)}${m.former.length?`<span class="year-member-bar-former">元・${esc(m.former.join('・'))}</span>`:''}</div>
           <div class="year-member-bar-track">
             <div class="year-member-bar-fill" style="width:${Math.round(m.total/maxMember*100)}%"></div>
           </div>
