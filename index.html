@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>チェキカウンター</title>
+<link rel="icon" type="image/svg+xml" href="icon.svg">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Kaisei+Decol:wght@400;700&family=Noto+Sans+JP:wght@400;700;900&family=DotGothic16&display=swap');
 
@@ -148,12 +149,6 @@ body{
 }
 .tag-edit-btn.active{background:var(--pink);border-color:var(--pink);color:#fff}
 .tag-pill-wrap{display:flex;align-items:center;gap:2px;flex-shrink:0}
-.tag-pill-del{
-  background:none;border:none;color:#fff;
-  font-size:10px;cursor:pointer;padding:0 4px 0 0;
-  font-weight:700;opacity:0.8;
-}
-.tag-pill-del:active{opacity:.4}
 .tag-drag-handle{
   font-size:12px;color:rgba(255,255,255,.7);
   cursor:grab;margin-right:2px;letter-spacing:-1px;
@@ -528,7 +523,7 @@ body{
 .year-month-label{font-family:'Kaisei Decol',serif;font-size:15px;font-weight:700;color:var(--text)}
 .year-month-total{font-family:'DotGothic16',monospace;font-size:18px;color:var(--pink)}
 .year-member-bar{display:flex;align-items:center;gap:8px;margin-bottom:5px}
-.year-member-bar-name{font-size:12px;font-weight:700;color:var(--text);width:80px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.year-member-bar-name{font-size:12px;font-weight:700;color:var(--text);width:112px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .year-member-bar-track{flex:1;background:var(--s2);border-radius:4px;height:8px;overflow:hidden}
 .year-member-bar-fill{height:100%;background:var(--pink);border-radius:4px;transition:width .3s}
 .year-member-bar-count{font-family:'DotGothic16',monospace;font-size:12px;color:var(--pink);width:30px;text-align:right;flex-shrink:0}
@@ -835,7 +830,39 @@ function hideSaveIndicator() {
 // ═══ UTILS ═══
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+// HTMLの属性値に入れる用（グループ名に ' や " が含まれても壊れないように）
+function escAttr(s){ return esc(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 function getMember(id){ return db.members.find(m=>m.id===id); }
+
+// ═══ 転生（改名・グループ移籍）対応 ═══
+// m.past = [{until:'2026-07', name:'旧名', tags:['旧グループ'], color:'pink'}, ...]（until昇順）
+// m.name / m.tags / m.color は「いちばん新しい時期」の値。past が無い推しは従来どおりの動き。
+function eraAt(m, ym){
+  const past = m.past;
+  if(!past || !past.length) return null;
+  ym = ym || currentYM;
+  for(let i=0;i<past.length;i++){ if(ym <= past[i].until) return past[i]; }
+  return null;
+}
+function nameFor(m, ym){ const e = eraAt(m, ym); return (e && e.name) || m.name; }
+function tagsFor(m, ym){ const e = eraAt(m, ym); return ((e ? e.tags : m.tags) || []); }
+// グループを持たない期間（卒業〜次の加入までの無所属）。転生登録済みの推しにだけ出す
+function isFreeAt(m, ym){ return !!(m.past && m.past.length) && tagsFor(m, ym).length === 0; }
+// 担当カラーも時期ごと。旧区間に色が無ければ現在の色（既存データ互換）
+function colorKeyFor(m, ym){ const e = eraAt(m, ym); return (e && e.color) || m.color || 'mono'; }
+function setEra(m, ym, name, tags, color){
+  const e = eraAt(m, ym);
+  if(e){ e.name = name; e.tags = tags; if(color) e.color = color; }
+  else { m.name = name; m.tags = tags; if(color) m.color = color; }
+}
+// 表示中の月に誰か所属しているグループだけ返す（誰も所属していないグループは従来どおり残す）
+function visibleTags(ym){
+  return db.tags.filter(t=>{
+    if(db.members.some(m=>tagsFor(m, ym).includes(t))) return true;
+    const anyEver = db.members.some(m=>(m.tags||[]).includes(t) || (m.past||[]).some(pp=>(pp.tags||[]).includes(t)));
+    return !anyEver;
+  });
+}
 function memberTotal(m, ym){
   ym = ym || currentYM;
   if(!db.monthData) db.monthData = {};
@@ -927,15 +954,17 @@ function renderTagFilter(){
         <div class="tag-pill active" style="display:flex;align-items:center;gap:4px;padding-right:6px;touch-action:none">
           <span class="tag-drag-handle">⠿</span>
           ${esc(t)}
-          <button class="tag-pill-del" onclick="event.stopPropagation();deleteTagFromBar('${esc(t)}')">✕</button>
         </div>
       </div>`).join('');
     el.innerHTML = html || '<span style="font-size:12px;color:var(--muted)">グループなし</span>';
   } else {
-    const pills = [{id:null,name:'すべて'}, ...db.tags.map(t=>({id:t,name:t}))];
+    const vt = visibleTags(currentYM);
+    // 表示中の月に存在しないグループで絞り込んでいたら「すべて」に戻す
+    if(activeTag!==null && !vt.includes(activeTag)) activeTag = null;
+    const pills = [{id:null,name:'すべて'}, ...vt.map(t=>({id:t,name:t}))];
     el.innerHTML = pills.map(p=>`
       <div class="tag-pill ${activeTag===p.id?'active':''}"
-        data-tagid="${p.id===null?'__all__':esc(p.id)}"
+        data-tagid="${p.id===null?'__all__':escAttr(p.id)}"
         onclick="handleTagPillClick(this)">${esc(p.name)}</div>
     `).join('');
   }
@@ -1017,16 +1046,6 @@ function tagDragEnd(e){
   touchDragIndex=null; touchDragEl=null;
 }
 
-function deleteTagFromBar(t){
-  if(!confirm(`グループ「${t}」を削除しますか？
-所属メンバーからも外れます。`)) return;
-  db.tags = db.tags.filter(x=>x!==t);
-  db.members.forEach(m=>{ m.tags=(m.tags||[]).filter(x=>x!==t); });
-  if(activeTag===t) activeTag=null;
-  save();
-  renderTagFilter();
-  renderMemberView();
-}
 
 function setActiveTag(t){ activeTag=t; renderHome(); }
 function handleTagPillClick(el){
@@ -1043,7 +1062,7 @@ function setView(v){
 
 function renderMemberView(){
   const el = document.getElementById('member-view');
-  let list = activeTag===null ? [...db.members] : db.members.filter(m=>(m.tags||[]).includes(activeTag));
+  let list = activeTag===null ? [...db.members] : db.members.filter(m=>tagsFor(m,currentYM).includes(activeTag));
   if(sortByCount){
     // 当月枚数降順、同枚数の場合は年間通算枚数降順
     const cy2 = new Date().getFullYear();
@@ -1126,12 +1145,12 @@ function tileCard(m){
   const cnt=memberTotal(m,currentYM);
   const s=db.settings||{};
   const cost=cnt*(m.price||0);
-  const mc=getMemberColor(m);
-  const isMono = (m.color||'mono')==='mono';
+  const mc=getMemberColor(m,currentYM);
+  const isMono = colorKeyFor(m,currentYM)==='mono';
   return `<div class="tile-card" onclick="showDetail('${m.id}')"
     style="border-color:${mc.accent};border-width:${isMono?'1.5px':'2px'}">
-    <div class="tile-name">${esc(m.name)}</div>
-    <div class="tile-tags">${(m.tags||[]).map(t=>`<span class="tile-tag" style="${isMono?'':'background:'+mc.accent+';color:#fff;border-color:'+mc.accent}">${esc(t)}</span>`).join('')}</div>
+    <div class="tile-name">${esc(nameFor(m,currentYM))}</div>
+    <div class="tile-tags">${isFreeAt(m,currentYM)?'<span class="tile-tag" style="opacity:.6">無所属</span>':tagsFor(m,currentYM).map(t=>`<span class="tile-tag" style="${isMono?'':'background:'+mc.accent+';color:#fff;border-color:'+mc.accent}">${esc(t)}</span>`).join('')}</div>
     <div class="tile-count-row" onclick="event.stopPropagation()">
       <div class="tile-count">${cnt}</div>
       <button class="tile-plus" onclick="tileChange('${m.id}',1)" style="border-color:${mc.border};color:${mc.accent}">＋</button>
@@ -1145,8 +1164,8 @@ function listCard(m){
   const s=db.settings||{};
   return `<div class="list-card" onclick="showDetail('${m.id}')">
     <div class="list-info">
-      <div class="list-name">${esc(m.name)}</div>
-      <div class="list-tags">${(m.tags||[]).map(t=>`<span class="list-tag">${esc(t)}</span>`).join('')}</div>
+      <div class="list-name">${esc(nameFor(m,currentYM))}</div>
+      <div class="list-tags">${isFreeAt(m,currentYM)?'<span class="list-tag" style="opacity:.6">無所属</span>':tagsFor(m,currentYM).map(t=>`<span class="list-tag">${esc(t)}</span>`).join('')}</div>
     </div>
     <div class="list-right">
       ${s.costMode && cost>0?`<div class="list-cost">¥${cost.toLocaleString()}</div>`:''}
@@ -1177,7 +1196,7 @@ function renderModalTags(){
     return;
   }
   el.innerHTML=db.tags.map(t=>`
-    <div class="tag-check ${selectedNewTags.has(t)?'on':''}" onclick="toggleModalTag('${esc(t)}')">${esc(t)}</div>
+    <div class="tag-check ${selectedNewTags.has(t)?'on':''}" data-tag="${escAttr(t)}" onclick="toggleModalTag(this.dataset.tag)">${esc(t)}</div>
   `).join('');
 }
 
@@ -1234,8 +1253,8 @@ function showDetail(id){
 function renderDetail(){
   const m=getMember(currentMemberId);
   const s=db.settings||{};
-  document.getElementById('det-name').textContent=m.name;
-  document.getElementById('det-tags-sub').textContent=(m.tags||[]).join('  ·  ')||'タグなし';
+  document.getElementById('det-name').textContent=nameFor(m,currentYM);
+  document.getElementById('det-tags-sub').textContent=tagsFor(m,currentYM).join('  ·  ')||(isFreeAt(m,currentYM)?'無所属':'タグなし');
   document.getElementById('det-memo').value=m.memo||'';
   // shot section
   document.getElementById('shot-section').style.display = s.shotMode ? 'block' : 'none';
@@ -1448,8 +1467,8 @@ function deleteMember(){
 document.querySelectorAll('.overlay').forEach(el=>{
   el.addEventListener('click',e=>{ if(e.target===el) el.classList.remove('open'); });
 });
-document.getElementById('in-m-name').addEventListener('keydown',e=>{ if(e.key==='Enter')submitMember(); });
-document.getElementById('in-new-tag').addEventListener('keydown',e=>{ if(e.key==='Enter'){ addNewTag(); } });
+document.getElementById('in-m-name').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.isComposing&&e.keyCode!==229)submitMember(); });
+document.getElementById('in-new-tag').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.isComposing&&e.keyCode!==229){ addNewTag(); } });
 
 
 
@@ -1462,12 +1481,144 @@ function saveAndGoHome(){
 // ═══ EDIT MEMBER ═══
 let editSelectedTags = new Set();
 
+// ═══ 転生（改名・グループ移籍）═══
+let rebirthTags = new Set();
+
+function renderRebirthList(){
+  const el = document.getElementById('rebirth-list');
+  if(!el) return;
+  const m = getMember(currentMemberId);
+  const past = m.past || [];
+  if(!past.length){
+    el.innerHTML = '<div style="font-size:11px;color:var(--muted);line-height:1.6">改名やグループ移籍があったら登録すると、月ごとに当時の名前で表示され、年間の合計は同じ人としてまとめて数えられます。</div>';
+    return;
+  }
+  const rows = past.map((pp,i)=>({
+    range: (i===0 ? '最初' : ymLabel(nextYM(past[i-1].until))) + ' 〜 ' + ymLabel(pp.until),
+    name: pp.name, tags: (pp.tags||[]).join('・'), color: pp.color || m.color || 'mono'
+  }));
+  rows.push({
+    range: ymLabel(nextYM(past[past.length-1].until)) + ' 〜 いま',
+    name: m.name, tags: (m.tags||[]).join('・'), color: m.color || 'mono'
+  });
+  el.innerHTML = rows.map(r=>{
+    const c = MEMBER_COLORS[r.color] || MEMBER_COLORS.mono;
+    return `<div style="padding:7px 10px;border-radius:8px;background:var(--s2);margin-bottom:6px;border-left:4px solid ${c.accent}">
+      <div style="font-size:10px;color:var(--muted)">${esc(r.range)}</div>
+      <div style="font-size:13px;font-weight:700;color:var(--text)">${esc(r.name)}</div>
+      <div style="font-size:11px;color:var(--muted)">${esc(r.tags||'無所属')}　<span style="opacity:.8">${esc(c.label)}</span></div>
+    </div>`;
+  }).join('')
+    + `<button class="btn-cancel" style="width:100%;font-size:11px;padding:7px" onclick="undoLastRebirth()">いちばん新しい転生を取り消す</button>`;
+}
+
+function openRebirthModal(){
+  const m = getMember(currentMemberId);
+  const sel = document.getElementById('rb-year');
+  const thisYear = new Date().getFullYear();
+  sel.innerHTML = '';
+  for(let y=thisYear-6; y<=thisYear+1; y++){
+    sel.innerHTML += `<option value="${y}" ${y===thisYear?'selected':''}>${y}年</option>`;
+  }
+  document.getElementById('rb-month').value = String(new Date().getMonth()+1).padStart(2,'0');
+  document.getElementById('rb-name').value = m.name;
+  document.getElementById('rb-new-tag').value = '';
+  renderColorPicker(m.color||'mono', 'rb-color-picker');
+  rebirthTags = new Set(m.tags||[]);
+  renderRebirthTags();
+  openModal('modal-rebirth');
+}
+
+function renderRebirthTags(){
+  const el = document.getElementById('rb-tag-checks');
+  // 「無所属」＝どのグループにも属さない期間。グループ別の集計から外れる
+  let html = `<div class="tag-check ${rebirthTags.size===0?'on':''}" onclick="setRebirthFree()">無所属（フリー）</div>`;
+  html += db.tags.map(t=>`
+    <div class="tag-check ${rebirthTags.has(t)?'on':''}" data-tag="${escAttr(t)}" onclick="toggleRebirthTag(this.dataset.tag)">${esc(t)}</div>
+  `).join('');
+  el.innerHTML = html;
+}
+function setRebirthFree(){ rebirthTags.clear(); renderRebirthTags(); }
+function toggleRebirthTag(t){
+  if(rebirthTags.has(t)) rebirthTags.clear();
+  else { rebirthTags.clear(); rebirthTags.add(t); }
+  renderRebirthTags();
+}
+function addRebirthTag(){
+  const v = document.getElementById('rb-new-tag').value.trim();
+  if(!v) return;
+  if(!db.tags.includes(v)) db.tags.push(v);
+  rebirthTags.clear();
+  rebirthTags.add(v);
+  document.getElementById('rb-new-tag').value='';
+  renderRebirthTags();
+}
+
+function submitRebirth(){
+  const name = document.getElementById('rb-name').value.trim();
+  if(!name){ alert('新しい名前を入力してください。'); return; }
+  const newTag = document.getElementById('rb-new-tag').value.trim();
+  if(newTag){
+    if(!db.tags.includes(newTag)) db.tags.push(newTag);
+    rebirthTags.clear();
+    rebirthTags.add(newTag);
+  }
+  const fromYM = document.getElementById('rb-year').value + '-' + document.getElementById('rb-month').value;
+  const untilYM = prevYM(fromYM);
+  const m = getMember(currentMemberId);
+  const past = m.past || [];
+  if(past.length && untilYM <= past[past.length-1].until){
+    alert('その月より前に、すでに転生が登録されています。\n先に「いちばん新しい転生を取り消す」で取り消してください。');
+    return;
+  }
+  const oldName = m.name, oldTags = [...(m.tags||[])], oldColor = m.color||'mono';
+  const newColorEl = document.querySelector('#rb-color-picker .color-swatch.selected');
+  const newColor = newColorEl ? newColorEl.dataset.color : oldColor;
+  const oldLabel = oldTags.length ? oldTags.join('・') : '無所属';
+  const newLabel = rebirthTags.size ? [...rebirthTags].join('・') : '無所属';
+  if(!confirm(`${ymLabel(untilYM)}まで：${oldName}（${oldLabel}）\n${ymLabel(fromYM)}から：${name}（${newLabel}）\n\nチェキ枚数は今までどおり同じ人として合算され、\nグループ別の集計だけが分かれます。\n\nよろしいですか？`)) return;
+  past.push({ until: untilYM, name: oldName, tags: oldTags, color: oldColor });
+  m.past = past;
+  m.name = name;
+  m.tags = [...rebirthTags];
+  m.color = newColor;
+  save();
+  closeModal('modal-rebirth');
+  closeModal('modal-edit');
+  renderDetail();
+  openEditModal();
+}
+
+function undoLastRebirth(){
+  const m = getMember(currentMemberId);
+  if(!m.past || !m.past.length) return;
+  const pp = m.past[m.past.length-1];
+  if(!confirm(`いちばん新しい転生を取り消します。\n\n「${m.name}」→「${pp.name}」に戻り、\n${ymLabel(nextYM(pp.until))}以降も「${pp.name}」として扱われます。\n\nよろしいですか？`)) return;
+  m.past.pop();
+  m.name = pp.name;
+  m.tags = [...(pp.tags||[])];
+  if(pp.color) m.color = pp.color;
+  if(!m.past.length) delete m.past;
+  save();
+  closeModal('modal-edit');
+  renderDetail();
+  openEditModal();
+}
+
 function openEditModal(){
   const m = getMember(currentMemberId);
-  document.getElementById('in-edit-name').value = m.name;
+  document.getElementById('in-edit-name').value = nameFor(m, currentYM);
   document.getElementById('in-edit-new-tag').value = '';
-  renderColorPicker(m.color||'mono', 'edit-color-picker');
-  editSelectedTags = new Set(m.tags||[]);
+  renderColorPicker(colorKeyFor(m, currentYM), 'edit-color-picker');
+  editSelectedTags = new Set(tagsFor(m, currentYM));
+  // 転生を登録している推しは「いま何月を編集しているのか」を明示する
+  const note = document.getElementById('edit-era-note');
+  if(note){
+    const hasPast = !!(m.past && m.past.length);
+    note.style.display = hasPast ? 'block' : 'none';
+    note.textContent = hasPast ? `${ymLabel(currentYM)}時点の名前・グループを編集します` : '';
+  }
+  renderRebirthList();
   renderEditTags();
   openModal('modal-edit');
   setTimeout(()=>document.getElementById('in-edit-name').focus(),120);
@@ -1479,10 +1630,15 @@ function renderEditTags(){
     el.innerHTML='<span style="font-size:12px;color:var(--muted)">まだグループがありません</span>';
     return;
   }
-  el.innerHTML = db.tags.map(t=>`
+  // 転生を登録している推しだけ「無所属」を選べるようにする（グループ間の空白期間用）
+  const mm = getMember(currentMemberId);
+  const freeChip = (mm && mm.past && mm.past.length)
+    ? `<div class="tag-check-wrap"><div class="tag-check ${editSelectedTags.size===0?'on':''}" onclick="editSelectedTags.clear();renderEditTags()">無所属（フリー）</div></div>`
+    : '';
+  el.innerHTML = freeChip + db.tags.map(t=>`
     <div class="tag-check-wrap">
-      <div class="tag-check ${editSelectedTags.has(t)?'on':''}" onclick="toggleEditTag('${esc(t)}')">${esc(t)}</div>
-      <button class="tag-del-btn" onclick="deleteTag('${esc(t)}')">✕</button>
+      <div class="tag-check ${editSelectedTags.has(t)?'on':''}" data-tag="${escAttr(t)}" onclick="toggleEditTag(this.dataset.tag)">${esc(t)}</div>
+      <button class="tag-del-btn" data-tag="${escAttr(t)}" onclick="deleteTag(this.dataset.tag)">✕</button>
     </div>
   `).join('');
 }
@@ -1500,7 +1656,7 @@ function toggleEditTag(t){
 function deleteTag(t){
   if(!confirm(`グループ「${t}」を削除しますか？\n所属メンバーからも外れます。`)) return;
   db.tags = db.tags.filter(x=>x!==t);
-  db.members.forEach(m=>{ m.tags=(m.tags||[]).filter(x=>x!==t); });
+  db.members.forEach(m=>{ m.tags=(m.tags||[]).filter(x=>x!==t); (m.past||[]).forEach(pp=>{ pp.tags=(pp.tags||[]).filter(x=>x!==t); }); });
   editSelectedTags.delete(t);
   save();
   renderEditTags();
@@ -1545,7 +1701,7 @@ function deleteTag(t){
   if(!confirm(`グループ「${t}」を削除しますか？
 所属メンバーからも外れます。`)) return;
   db.tags = db.tags.filter(x=>x!==t);
-  db.members.forEach(m=>{ m.tags=(m.tags||[]).filter(x=>x!==t); });
+  db.members.forEach(m=>{ m.tags=(m.tags||[]).filter(x=>x!==t); (m.past||[]).forEach(pp=>{ pp.tags=(pp.tags||[]).filter(x=>x!==t); }); });
   editSelectedTags.delete(t);
   save();
   renderEditTags();
@@ -1562,10 +1718,9 @@ function submitEdit(){
     editSelectedTags.add(newTag);
   }
   const m = getMember(currentMemberId);
-  m.name = name;
-  m.tags = [...editSelectedTags];
+  // 転生を登録している推しは「表示中の月の時期」の名前・グループ・カラーだけを書き換える
   const selectedColor = document.querySelector('#edit-color-picker .color-swatch.selected');
-  if(selectedColor) m.color = selectedColor.dataset.color;
+  setEra(m, currentYM, name, [...editSelectedTags], selectedColor ? selectedColor.dataset.color : null);
   save();
   closeModal('modal-edit');
   renderDetail();
@@ -1689,8 +1844,8 @@ function closeMonth(label){
   // 現在の枚数をスナップショット
   const snapshot = db.members.map(m => ({
     id: m.id,
-    name: m.name,
-    tags: m.tags||[],
+    name: nameFor(m, currentYM),
+    tags: tagsFor(m, currentYM),
     total: memberTotal(m)
   }));
   const record = {
@@ -1744,10 +1899,22 @@ function renderYearView(){
   const maxMonth = Math.max(...months.map(x=>x.total), 1);
   
   // メンバーごとの年間合計
-  const memberTotals = db.members.map(m => ({
-    name: m.name,
-    total: months.reduce((s,mo) => s + memberTotal(m, mo.ym), 0)
-  })).filter(x=>x.total>0).sort((a,b)=>b.total-a.total);
+  // 転生した子は同じ人として合算し、名前は「新しい名前（元・旧名）」で出す
+  const memberTotals = db.members.map(m => {
+    let total = 0;
+    const namesUsed = [];
+    months.forEach(mo => {
+      const c = memberTotal(m, mo.ym);
+      if(c > 0){
+        total += c;
+        const n = nameFor(m, mo.ym);
+        if(namesUsed[namesUsed.length-1] !== n) namesUsed.push(n);
+      }
+    });
+    const cur = namesUsed.length ? namesUsed[namesUsed.length-1] : m.name;
+    const former = [...new Set(namesUsed.slice(0,-1))].filter(n=>n!==cur);
+    return { name: cur, former, total };
+  }).filter(x=>x.total>0).sort((a,b)=>b.total-a.total);
   
   const maxMember = Math.max(...memberTotals.map(x=>x.total), 1);
   
@@ -1786,7 +1953,7 @@ function renderYearView(){
     name: tag,
     total: months.reduce((s, mo) => {
       return s + db.members
-        .filter(m => (m.tags||[]).includes(tag))
+        .filter(m => tagsFor(m, mo.ym).includes(tag))
         .reduce((ms, m) => ms + memberTotal(m, mo.ym), 0);
     }, 0)
   })).filter(x => x.total > 0).sort((a,b) => b.total - a.total);
@@ -1841,7 +2008,7 @@ function renderYearView(){
       <div class="month-card-header"><div class="month-card-title">推し別年間合計</div></div>
       ${memberTotals.map((m,i)=>`
         <div class="year-member-bar">
-          <div class="year-member-bar-name">${esc(m.name)}</div>
+          <div class="year-member-bar-name">${esc(m.name)}${m.former.length?`<span style="font-size:10px;color:var(--muted);font-weight:400">（元・${esc(m.former.join('・'))}）</span>`:''}</div>
           <div class="year-member-bar-track">
             <div class="year-member-bar-fill" style="width:${Math.round(m.total/maxMember*100)}%"></div>
           </div>
@@ -1975,14 +2142,16 @@ const THEME_LABELS = {
   green:'💚 緑', blue:'💙 青', purple:'💜 紫', mono:'🖤 モノクロ'
 };
 
-function applyTheme(name){
+// silent=true のときは保存しない（＝最終更新の表示を動かさない）。
+// 起動時のテーマ適用でも保存してしまうと「開いただけで最終更新が今になる」ため。
+function applyTheme(name, silent){
   const t = THEMES[name];
   if(!t) return;
   const root = document.documentElement.style;
   Object.entries(t).forEach(([k,v]) => root.setProperty(k, v));
   db.settings = db.settings||{};
   db.settings.theme = name;
-  save();
+  if(!silent) save();
   // テーマ選択モーダルのボタンを更新
   const btns = document.querySelectorAll('.theme-btn');
   btns.forEach(b => b.classList.toggle('active', b.dataset.theme===name));
@@ -2012,15 +2181,15 @@ const MEMBER_COLORS = {
   white:  { label:'白',           bg:'#ffffff', text:'#666666', border:'#e0e0e0', accent:'#bbbbbb' },
 };
 
-function getMemberColor(m){
-  return MEMBER_COLORS[m.color||'mono'] || MEMBER_COLORS.mono;
+function getMemberColor(m, ym){
+  return MEMBER_COLORS[colorKeyFor(m, ym||currentYM)] || MEMBER_COLORS.mono;
 }
 
 // ═══ INIT ═══
 (async () => {
   await loadData();
   // 保存済みテーマを適用
-  applyTheme((db.settings||{}).theme || 'pink');
+  applyTheme((db.settings||{}).theme || 'pink', true);
   document.getElementById('loading-screen').classList.add('hidden');
   document.getElementById('btn-sort').classList.add('active');
   switchScreen('sc-home');
@@ -2033,6 +2202,7 @@ function getMemberColor(m){
 <div class="overlay" id="modal-edit">
   <div class="modal">
     <h2>推しを編集</h2>
+    <div id="edit-era-note" style="display:none;font-size:11px;color:var(--pink);font-weight:700;margin:-4px 0 10px"></div>
     <div class="ff">
       <label>名前</label>
       <input type="text" id="in-edit-name" maxlength="20">
@@ -2045,13 +2215,62 @@ function getMemberColor(m){
       <label>グループ（タグ）</label>
       <div class="tag-checks" id="edit-tag-checks"></div>
       <div class="inline-add">
-        <input type="text" id="in-edit-new-tag" placeholder="新しいグループ名（Enterで追加）" maxlength="20" onkeydown="if(event.key==='Enter'){event.preventDefault();addEditTag()}">
+        <input type="text" id="in-edit-new-tag" placeholder="新しいグループ名（Enterで追加）" maxlength="20" onkeydown="if(event.key==='Enter'&&!event.isComposing&&event.keyCode!==229){event.preventDefault();addEditTag()}">
         <div class="inline-add-hint">Enterで追加します</div>
       </div>
+    </div>
+    <div class="ff">
+      <label>転生（改名・グループ移籍）</label>
+      <div id="rebirth-list" style="margin-bottom:8px"></div>
+      <button class="btn-cancel" style="width:100%;padding:9px" onclick="openRebirthModal()">＋ 転生を登録する</button>
     </div>
     <div class="m-acts">
       <button class="btn-cancel" onclick="closeModal('modal-edit')">キャンセル</button>
       <button class="btn-ok" onclick="submitEdit()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: 転生の登録 -->
+<div class="overlay" id="modal-rebirth">
+  <div class="modal">
+    <h2>転生を登録</h2>
+    <div style="font-size:11px;color:var(--muted);line-height:1.6;margin:-4px 0 12px">
+      改名やグループ移籍を登録します。チェキ枚数は今までどおり同じ人として合算され、グループ別の集計だけが月ごとに分かれます。
+    </div>
+    <div class="ff">
+      <label>いつから</label>
+      <div style="display:flex;gap:8px">
+        <select id="rb-year" style="flex:1"></select>
+        <select id="rb-month" style="flex:1">
+          <option value="01">1月</option><option value="02">2月</option><option value="03">3月</option>
+          <option value="04">4月</option><option value="05">5月</option><option value="06">6月</option>
+          <option value="07">7月</option><option value="08">8月</option><option value="09">9月</option>
+          <option value="10">10月</option><option value="11">11月</option><option value="12">12月</option>
+        </select>
+      </div>
+      <div class="inline-add-hint">この月より前は、今までの名前のまま残ります</div>
+    </div>
+    <div class="ff">
+      <label>新しい名前</label>
+      <input type="text" id="rb-name" maxlength="20" placeholder="変わらないならそのままでOK">
+    </div>
+    <div class="ff">
+      <label>新しい担当カラー</label>
+      <div class="color-picker" id="rb-color-picker"></div>
+      <div class="inline-add-hint">変わらないならそのままでOK</div>
+    </div>
+    <div class="ff">
+      <label>新しいグループ</label>
+      <div class="tag-checks" id="rb-tag-checks"></div>
+      <div class="inline-add">
+        <input type="text" id="rb-new-tag" placeholder="新しいグループ名（Enterで追加）" maxlength="20" onkeydown="if(event.key==='Enter'&&!event.isComposing&&event.keyCode!==229){event.preventDefault();addRebirthTag()}">
+        <div class="inline-add-hint">Enterで追加します</div>
+      </div>
+    </div>
+    <div class="m-acts">
+      <button class="btn-cancel" onclick="closeModal('modal-rebirth')">キャンセル</button>
+      <button class="btn-ok" onclick="submitRebirth()">登録する</button>
     </div>
   </div>
 </div>
@@ -2154,6 +2373,43 @@ function getMemberColor(m){
 
 <script>
 // Service Worker登録 - キャッシュ自動更新
+// iOS用 apple-touch-icon をその場で生成（icon.svg と同じ絵）。
+// 失敗しても本体に影響が出ないよう try で包む。manifest は入れていないので
+// ホーム画面追加時の保存先（Safariと同じ保管庫）は今までどおり変わらない。
+(function(){
+  try{
+    const c = document.createElement('canvas');
+    c.width = c.height = 180;
+    const ctx = c.getContext('2d');
+    if(!ctx || !ctx.roundRect) return;
+    const g = ctx.createLinearGradient(0, 0, 180, 180);
+    g.addColorStop(0, '#23b6ee'); g.addColorStop(1, '#7fdcff');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.roundRect(0, 0, 180, 180, 38); ctx.fill();
+    ctx.save();
+    ctx.translate(90, 90); ctx.rotate(-7 * Math.PI / 180); ctx.translate(-90, -90);
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.roundRect(54, 42, 72, 92, 7); ctx.fill();
+    ctx.fillStyle = '#e0f5ff';
+    ctx.beginPath(); ctx.roundRect(61, 49, 58, 58, 3); ctx.fill();
+    ctx.fillStyle = '#0ba3d8';
+    ctx.beginPath();
+    ctx.moveTo(90, 98);
+    ctx.bezierCurveTo(90, 98, 67, 83, 67, 69);
+    ctx.bezierCurveTo(67, 61, 73, 57, 79, 57);
+    ctx.bezierCurveTo(84, 57, 88, 61, 90, 64);
+    ctx.bezierCurveTo(92, 61, 96, 57, 101, 57);
+    ctx.bezierCurveTo(107, 57, 113, 61, 113, 69);
+    ctx.bezierCurveTo(113, 83, 90, 98, 90, 98);
+    ctx.closePath(); ctx.fill();
+    ctx.restore();
+    const link = document.createElement('link');
+    link.rel = 'apple-touch-icon';
+    link.href = c.toDataURL();
+    document.head.appendChild(link);
+  }catch(e){}
+})();
+
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('/sw.js').catch(()=>{});
 }
